@@ -1,0 +1,3144 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="通分大師：分數加減" />
+  <title>通分大師：分數加減</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --pink: #ff7eb6; --pink-deep: #ee4d93;
+      --sky: #5cc8ff; --sky-deep: #2a9adf;
+      --lemon: #ffe066; --lemon-deep: #e4b82a;
+      --lilac: #c9b6ff; --lilac-deep: #9b7af0;
+      --mint: #7eecc8; --mint-deep: #3cbc9a;
+      --ink: #3b2a55; --soft: #7a6588;
+      --line: #2c2144;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-l: env(safe-area-inset-left, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; }
+    body {
+      position: fixed; inset: 0;
+      font-family: "Noto Sans TC", "PingFang HK", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(255, 196, 168, 0.55) 0%, rgba(255, 196, 168, 0) 36%),
+        linear-gradient(124deg, rgba(255, 228, 206, 0.72) 0%, rgba(255, 228, 206, 0) 48%),
+        linear-gradient(208deg, rgba(176, 224, 216, 0.4) 10%, rgba(176, 224, 216, 0) 52%),
+        linear-gradient(160deg, #fff8f4 0%, #ffe6d8 40%, #fff3ec 70%, #f3fbf8 100%);
+      user-select: none;
+    }
+    .fun-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .deco { position: absolute; }
+    .deco svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .deco-lt { top: 4%; left: 11%; width: 34vmin; height: 34vmin; transform: rotate(-18deg); }
+    .deco-lbl { top: 43%; left: 1%; width: 29vmin; height: 29vmin; transform: rotate(16deg); }
+    .deco-lbr { top: 60%; left: 12.5%; width: 32vmin; height: 32vmin; transform: rotate(-12deg); }
+    .deco-rt { top: 6%; right: 3%; width: 33vmin; height: 33vmin; transform: rotate(14deg); }
+    .deco-rbl { top: 38%; right: 14%; width: 28vmin; height: 28vmin; transform: rotate(-22deg); }
+    .deco-rbr { top: 70%; right: 5%; width: 31vmin; height: 31vmin; transform: rotate(20deg); }
+    button, input { font-family: inherit; }
+    button { cursor: pointer; touch-action: manipulation; }
+    input { user-select: text; -webkit-user-select: text; }
+
+    @keyframes popIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+    @keyframes bounce { 0% { transform: scale(1); } 35% { transform: scale(0.88); } 70% { transform: scale(1.08); } 100% { transform: scale(1); } }
+    @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+    @keyframes pullGrow { from { transform: translateX(-50%) scaleY(0.08); opacity: 0; } to { transform: translateX(-50%) scaleY(1); opacity: 1; } }
+    @keyframes fallNum { from { transform: translateY(calc(-1 * var(--row))); opacity: 0.35; } to { transform: none; opacity: 1; } }
+    .bounce { animation: bounce 0.35s ease; }
+    .shake { animation: shake 0.4s ease; }
+
+    .app {
+      position: relative; z-index: 1;
+      height: 100%; width: 100%; overflow: hidden; display: flex;
+      padding: calc(6px + var(--safe-t)) calc(8px + var(--safe-r)) calc(6px + var(--safe-b)) calc(8px + var(--safe-l));
+    }
+    .screen {
+      display: none; width: min(1280px, 100%); margin: 0 auto;
+      height: 100%; min-height: 0; flex-direction: column; overflow: hidden;
+      animation: popIn 0.35s ease;
+    }
+    .screen.active { display: flex; }
+    .card {
+      background: rgba(255,255,255,0.92); border: 3px solid #fff; border-radius: 26px;
+      box-shadow: 0 14px 30px rgba(155, 122, 240, 0.18); min-height: 0; color: var(--ink);
+    }
+    .candy {
+      border: 0; border-radius: 999px; font-weight: 900; padding: 10px 18px;
+      transition: transform 0.12s ease, filter 0.12s ease;
+    }
+    .candy:hover { filter: brightness(1.05); }
+    .candy:active { transform: translateY(4px) scale(0.96); box-shadow: 0 2px 0 rgba(0,0,0,0.18) !important; animation: bounce 0.3s ease; }
+    .candy:disabled { filter: saturate(0.55); pointer-events: none; }
+    .sky { background: var(--sky); color: #0a3a5c; box-shadow: 0 6px 0 var(--sky-deep); }
+    .pink { background: var(--pink); color: #fff; box-shadow: 0 6px 0 var(--pink-deep); }
+    .lemon { background: var(--lemon); color: var(--ink); box-shadow: 0 6px 0 var(--lemon-deep); }
+    .mint { background: var(--mint); color: #165f4c; box-shadow: 0 6px 0 var(--mint-deep); }
+    .lilac { background: var(--lilac); color: #fff; box-shadow: 0 6px 0 var(--lilac-deep); }
+    .ghost { background: #fff; color: var(--soft); box-shadow: 0 5px 0 #ecd6de; }
+
+    #screen-login { align-items: center; justify-content: center; }
+    .login { width: min(400px, 100%); padding: 22px 18px 16px; text-align: center; }
+    .mascot {
+      width: 72px; height: 72px; margin: 0 auto 6px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 36px; background: #fff;
+      box-shadow: 0 8px 0 #ffc2e0;
+      animation: floaty 2.8s ease-in-out infinite;
+    }
+    .mascot svg { width: 44px; height: auto; display: block; }
+    .title {
+      font-family: "Fredoka", "Noto Sans TC", sans-serif;
+      font-size: clamp(20px, 4.4vh, 30px); font-weight: 900; letter-spacing: 0.03em;
+      margin-bottom: 14px; line-height: 1.3; white-space: nowrap;
+      background: none; border: 0; box-shadow: none; padding: 0; text-shadow: none;
+    }
+    .title span:nth-child(odd) { color: var(--pink-deep); }
+    .title span:nth-child(even) { color: var(--lilac-deep); }
+    .field { text-align: left; margin-bottom: 10px; }
+    .field label { display: block; font-weight: 900; font-size: 15px; margin-bottom: 4px; }
+    .field input {
+      width: 100%; border: 3px solid #ffe1ec; border-radius: 16px;
+      padding: 10px 12px; font-size: 18px; font-weight: 800; outline: none; background: #fff;
+    }
+    .field input:focus { border-color: var(--pink); }
+    .start { width: 100%; font-size: 22px; padding: 12px; margin: 6px 0 10px; }
+    .teacher-btn {
+      width: 64px; height: 64px; border-radius: 50%; font-size: 13px; line-height: 1.15;
+      padding: 0; margin: 4px auto 0; display: grid; place-items: center;
+    }
+    .login-acts {
+      display: flex; flex-wrap: nowrap; justify-content: center; align-items: center;
+      gap: 22px; margin-top: 4px;
+    }
+    .login-acts .teacher-btn {
+      margin: 0; padding: 0; width: 64px; height: 64px; min-width: 64px;
+      flex: 0 0 64px; font-size: 13px; line-height: 1.2;
+    }
+    .rank-note {
+      flex-shrink: 0; font-family: "Fredoka", "Noto Sans TC", sans-serif;
+      font-weight: 900; font-size: clamp(24px, 3.6vh, 32px); line-height: 1.3;
+      color: var(--pink-deep); text-align: center; letter-spacing: 0.04em;
+    }
+    tr.r1 td { background: #fff6c9; }
+    tr.r2 td { background: #eef2f7; }
+    tr.r3 td { background: #f8ead8; }
+
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-shrink: 0; margin-bottom: 4px; overflow: visible; }
+    .pill {
+      background: #fff; color: var(--ink); border-radius: 999px; padding: 6px 12px;
+      font-weight: 800; font-size: 16px; box-shadow: 0 4px 0 #f0d7e2; white-space: nowrap;
+    }
+    .timer-wrap { position: relative; flex-shrink: 0; }
+    .timer { font-variant-numeric: tabular-nums; background: #fff4cc; min-width: 92px; text-align: center; }
+    .timer.low, .timer.hit { background: #ffd0d8; color: #b42318; }
+    .timer.hit { animation: shake 0.4s ease; }
+    .time-hit {
+      position: absolute; left: 50%; top: 50%; z-index: 3;
+      font-weight: 900; font-size: 16px; color: #b42318;
+      pointer-events: none; opacity: 0; white-space: nowrap;
+      text-shadow: 0 1px 0 #fff, 0 0 8px #fff;
+    }
+    .time-hit.show { animation: timeHitPop 0.7s ease; }
+    @keyframes timeHitPop {
+      0% { opacity: 0; transform: translate(-50%, -40%) scale(0.8); }
+      22% { opacity: 1; transform: translate(-50%, -110%) scale(1.12); }
+      100% { opacity: 0; transform: translate(-50%, -160%) scale(0.96); }
+    }
+    .tiny { padding: 6px 12px; font-size: 13px; }
+
+    .play { flex: 1; min-height: 0; overflow: hidden; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .task-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-shrink: 0; }
+    .task-h h2 { font-size: clamp(18px, 2.8vh, 24px); line-height: 1.3; }
+    .task-h p { font-size: 16px; font-weight: 900; color: var(--soft); white-space: nowrap; }
+    .hintbar {
+      flex-shrink: 0; font-size: clamp(18px, 3vh, 22px); font-weight: 900; color: #5a4a72;
+      background: #e8fff6; border-radius: 12px; padding: 8px 12px; text-align: center;
+      line-height: 1.4; white-space: normal; overflow: hidden;
+    }
+    .board {
+      flex: 1; min-height: 0; position: relative;
+      display: flex; align-items: stretch; justify-content: center;
+      background: linear-gradient(180deg, #fff, #fff4ee);
+      border-radius: 22px; overflow: hidden;
+      box-shadow: inset 0 0 0 2px rgba(255, 168, 130, 0.35);
+    }
+    .board::before, .board::after {
+      content: ""; position: absolute; width: 54px; height: 14px; z-index: 2; pointer-events: none;
+      background: #ffe066;
+      box-shadow: 0 2px 0 rgba(228, 184, 42, 0.35);
+    }
+    .board::before { top: 10px; left: 4px; transform: rotate(-45deg); }
+    .board::after { top: 12px; right: 4px; transform: rotate(45deg); }
+    .stage {
+      position: relative; z-index: 1;
+      width: 100%; height: 100%; min-height: 0;
+      display: flex; align-items: stretch; justify-content: flex-start;
+      padding: 16px 14px 8px 14px;
+    }
+    .sheet {
+      --q: clamp(22px, 3.4vh, 30px);
+      --l: clamp(26px, 4vh, 36px);
+      --row: clamp(64px, 9vh, 86px);
+      --gap: 16px;
+      position: relative;
+      width: 100%; height: 100%; min-height: 0;
+      display: flex; flex-direction: column; align-items: stretch;
+    }
+    .stack {
+      flex: 1; min-height: 0; width: 100%; max-width: calc(100% - 360px); align-self: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+      gap: var(--gap); font-size: var(--q); font-weight: 900;
+    }
+    .cmp-title {
+      flex-shrink: 0; display: flex; justify-content: center; align-items: center;
+      gap: 0.35em; font-weight: 900; font-size: 1em; white-space: nowrap;
+    }
+    .cmp-title .frac { font-size: 1em; }
+    .ladder-col { position: absolute; right: 8px; top: 0; }
+    .note-col { display: contents; }
+    .lcm-line {
+      display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 0.35em;
+      font-weight: 900; font-size: inherit; line-height: 1.25;
+    }
+    .lcm-num { font-size: inherit; font-weight: 900; font-variant-numeric: tabular-nums; }
+    .note-col .frac, .chip .frac { font-size: 1em; }
+    .therefore {
+      flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
+      gap: 0.55em; margin-top: 0;
+    }
+    .there-row { display: flex; align-items: center; justify-content: center; gap: 0.4em; font-size: inherit; }
+    .therefore-mark { font-size: 1em; font-weight: 900; }
+    .sign { font-size: 1em; font-weight: 900; color: var(--pink-deep); min-width: 1em; text-align: center; }
+    .frac-side { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; min-width: 0; }
+    .frac {
+      display: inline-grid; grid-template-rows: auto 3px auto; justify-items: center;
+      min-width: 42px; font-weight: 900; font-size: clamp(26px, 4vh, 34px); line-height: 1;
+      font-family: "Noto Sans TC", sans-serif; font-variant-numeric: tabular-nums;
+    }
+    .frac i { width: 100%; min-width: 28px; height: 3px; background: var(--line); border-radius: 2px; margin: 2px 0; }
+    .eq { display: flex; align-items: center; gap: 0.45em; font-weight: 900; font-size: 1em; }
+    .eq .frac {
+      font-size: 1em; line-height: 1;
+      grid-template-rows: 1.35em 3px 1.35em;
+      align-items: center; min-width: 1.7em;
+    }
+    .eq .frac b { font-size: 1em; font-weight: 900; line-height: 1; }
+    .eq .frac i { margin: 0; height: 3px; min-width: 1.2em; }
+    .eq .slotbox {
+      font-size: 1em; height: 1.2em; min-width: 1.45em;
+      padding: 0 0.16em; border-width: 2px; border-radius: 8px;
+    }
+    .qmark { font-size: 32px; color: var(--pink-deep); }
+    .cmp-row { display: flex; align-items: center; gap: 14px; }
+
+    .lshape { display: flex; align-items: flex-start; font-size: var(--l); font-weight: 900; }
+    .ldivs { width: 2.7em; display: flex; flex-direction: column; flex: 0 0 2.7em; }
+    .dcell {
+      height: var(--row); display: grid; place-items: center;
+      border-bottom: 5px solid transparent;
+      font-size: inherit; font-weight: 900; font-variant-numeric: tabular-nums;
+      font-family: "Noto Sans TC", sans-serif;
+    }
+    .lbody {
+      padding: 0 4px 0 6px;
+      background: rgba(255,255,255,0.72);
+    }
+    .nrow {
+      display: grid; height: var(--row);
+      border-left: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-bottom-left-radius: 12px;
+      padding-right: 0.4em;
+      font-size: inherit;
+    }
+    .nrow.ruled { border-left-color: var(--line); border-bottom-color: var(--line); }
+    .ncell {
+      position: relative; display: grid; place-items: center;
+      font-family: "Noto Sans TC", sans-serif; font-variant-numeric: tabular-nums;
+      font-weight: 900; font-size: inherit; line-height: 1;
+    }
+    .ncell .pull {
+      position: absolute; left: 50%; top: calc(50% + 0.34em);
+      width: 0.48em; height: calc(50% - 0.42em);
+      transform: translateX(-50%);
+      transform-origin: top center; animation: pullGrow 0.55s ease;
+      pointer-events: none; z-index: 3; overflow: visible;
+    }
+    .ncell.fall .digit { display: inline-block; animation: fallNum 0.55s ease; }
+    .slotbox {
+      min-width: 1.7em; height: 1.42em; padding: 0 0.2em;
+      border: 3px solid #ffe1ec; border-radius: 12px; background: #fff;
+      display: grid; place-items: center;
+      font-size: inherit; font-weight: 900; font-variant-numeric: tabular-nums;
+      color: var(--ink);
+    }
+    .slotbox.on { border-color: var(--pink); }
+    .slotbox.bad, .slotbox.on.bad { border-color: #e0314b; background: #fff1f3; }
+    .slotbox.sm { min-width: 1.5em; height: 1.3em; }
+
+    .oslot, .chip {
+      width: 3.15em; height: 3.05em; border-radius: 16px; box-sizing: border-box;
+      display: grid; place-items: center; padding: 0; font-size: inherit;
+    }
+    .oslot { border: 3px dashed #ffd0e2; background: #fff; }
+    .oslot.over { border-color: var(--pink); background: #fff5f9; }
+    .pool { display: flex; gap: 0.4em; flex-wrap: wrap; justify-content: center; min-height: 3.05em; }
+    .chip {
+      border: 3px solid #fff; background: #fff;
+      box-shadow: 0 4px 0 #e7eef8; touch-action: none; cursor: grab;
+    }
+    .oslot .chip { width: calc(100% + 6px); height: calc(100% + 6px); margin: -3px; }
+    .chip .frac { font-size: 1em; }
+    .drag-ghost {
+      position: fixed; z-index: 80; pointer-events: none; margin: 0;
+      transform: translate(-50%, -50%); opacity: 0.94;
+    }
+
+    .dock { display: flex; gap: 8px; flex-shrink: 0; align-items: stretch; min-height: 0; }
+    .keypad { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .key-acts { display: flex; gap: 6px; align-items: stretch; }
+    .key-acts .key { min-width: 76px; padding: 8px 10px; }
+    .key {
+      border: 0; border-radius: 14px; background: #fff; color: var(--ink);
+      font-weight: 900; font-size: clamp(18px, 2.6vh, 24px); padding: 8px 0;
+      box-shadow: 0 4px 0 #e4d7ea;
+    }
+    .key.go { background: var(--mint); color: #165f4c; box-shadow: 0 4px 0 var(--mint-deep); }
+    .key.del { background: #fff; color: var(--soft); font-size: 18px; }
+    .key.done {
+      background: var(--lemon); color: var(--ink); box-shadow: 0 4px 0 var(--lemon-deep);
+      font-size: 16px; white-space: nowrap;
+    }
+
+    .dash-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-shrink: 0; margin-bottom: 8px; }
+    .dash-h h1 { font-family: "Fredoka", "Noto Sans TC", sans-serif; font-size: clamp(20px, 3vh, 28px); color: var(--ink); }
+    .dash-h .acts { display: flex; gap: 8px; margin: 0; }
+    .dash { flex: 1; min-height: 0; overflow: hidden; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; flex-shrink: 0; }
+    .stat { border-radius: 16px; padding: 10px; }
+    .stat b { display: block; font-size: 12px; opacity: 0.8; }
+    .stat strong { font-size: clamp(16px, 2.6vh, 24px); display: block; line-height: 1.2; }
+    .stat .miss3 { font-size: 13px; font-weight: 800; line-height: 1.45; }
+    .s1 { background: #d9f8ee; } .s2 { background: #ffe1ea; } .s3 { background: #efe6ff; }
+    .tools { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 8px; flex-wrap: wrap; }
+    .tools select, .tools button.tiny { border: 2px solid #ffe1ec; border-radius: 12px; padding: 4px 8px; font-weight: 800; background: #fff; }
+    .tool-filters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .dash-src { font-size: 12px; font-weight: 800; color: var(--soft); }
+    .dash-count { font-size: 12px; font-weight: 800; color: var(--soft); }
+    .records { flex: 1; min-height: 0; overflow: auto; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid rgba(16,36,63,0.08); font-size: 12px; }
+    th { background: #e8fff6; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
+    th.col-h { padding-right: 4px; }
+    .col-sort { border: 0; background: transparent; font: inherit; font-weight: 900; cursor: pointer; padding: 0; }
+    th.sorted .col-sort { color: #3cbc9a; }
+    .filter-btn {
+      border: 0; background: #d9f8ee; color: var(--ink); cursor: pointer;
+      border-radius: 8px; width: 22px; height: 22px; margin-left: 4px;
+      font-size: 12px; font-weight: 900; line-height: 1; vertical-align: middle;
+    }
+    .filter-btn.on { background: var(--mint-deep); color: #fff; }
+    .score-cell { font-variant-numeric: tabular-nums; font-weight: 900; text-align: center; }
+    th.score-h, td.rank-cell { text-align: center; font-variant-numeric: tabular-nums; }
+    tr.hi .score-cell { color: #1a8f7c; }
+    tr.lo .score-cell { color: #b42318; }
+    .diag-cell { white-space: pre-line; }
+    .empty { text-align: center; padding: 20px; font-weight: 800; color: var(--soft); }
+    .filter-menu {
+      position: fixed; z-index: 30; width: min(280px, calc(100vw - 16px));
+      background: #fff; border-radius: 18px; padding: 10px;
+      box-shadow: 0 16px 36px rgba(59,42,85,0.24); border: 2px solid #ffe1ec;
+      display: none; flex-direction: column; gap: 8px; max-height: min(420px, 70vh);
+    }
+    .filter-menu.show { display: flex; }
+    .filter-menu .fm-title { font-weight: 900; font-size: 14px; text-align: left; }
+    .filter-menu .fm-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-menu .fm-acts button {
+      border: 0; border-radius: 999px; font-weight: 900; padding: 6px 10px; font-size: 12px;
+      background: #e8fff6; color: var(--ink); cursor: pointer;
+    }
+    .filter-menu input[type="search"] {
+      width: 100%; border: 2px solid #ffe1ec; border-radius: 12px;
+      padding: 6px 8px; font-weight: 800; font-size: 14px;
+    }
+    .filter-menu .opts { overflow: auto; text-align: left; flex: 1; min-height: 80px; }
+    .filter-menu label { display: flex; gap: 8px; align-items: flex-start; padding: 5px 2px; font-weight: 800; font-size: 13px; cursor: pointer; }
+    .filter-menu label input { margin-top: 2px; }
+
+    .report {
+      position: fixed; inset: 0; background: rgba(59, 42, 85, 0.42);
+      display: none; place-items: center; z-index: 25; padding: 16px;
+    }
+    .report.show { display: grid; }
+    .report-card {
+      width: min(520px, 100%); background: #fff; border-radius: 32px;
+      padding: 22px 20px 18px; text-align: center; border: 4px solid #fff;
+      box-shadow: 0 18px 40px rgba(126, 236, 200, 0.28); animation: popIn 0.4s ease; color: var(--ink);
+    }
+    .report-card h2 { font-size: clamp(22px, 3.4vh, 28px); margin: 8px 0 10px; }
+    .report-card p { font-weight: 800; line-height: 1.55; margin: 8px 0; font-size: 16px; }
+    .tip {
+      background: #e8fff6; border-radius: 18px; padding: 12px 14px; margin: 12px 0 16px;
+      font-weight: 800; line-height: 1.6; text-align: left; white-space: pre-wrap;
+    }
+    .modal { position: fixed; inset: 0; background: rgba(59,42,85,0.4); display: none; place-items: center; z-index: 20; padding: 16px; }
+    .modal.show { display: grid; }
+    .modal-card { width: min(360px, 100%); background: #fff; border-radius: 24px; padding: 18px; text-align: center; color: var(--ink); }
+    .modal-card input {
+      width: 100%; border: 3px solid #ffe1ec; border-radius: 14px;
+      padding: 10px; font-size: 20px; font-weight: 800; text-align: center; margin: 10px 0;
+    }
+    .choice-row { display: flex; gap: 8px; align-items: stretch; }
+    .choice-row .candy {
+      flex: 1; font-size: clamp(16px, 2.5vh, 20px); padding: 12px 8px;
+      display: inline-flex; align-items: center; justify-content: center;
+      text-align: center; line-height: 1.2;
+    }
+    canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
+
+    .slotbox {
+      box-sizing: content-box;
+      width: 1.7em; min-width: 1.7em; max-width: 1.7em;
+      height: 1.2em;
+      padding: 0.08em 0.22em;
+      border-width: 2px; border-radius: 8px;
+      overflow: visible; line-height: 1.2em;
+    }
+    .numbox {
+      display: inline-grid; place-items: center; box-sizing: content-box;
+      width: 1.7em; min-width: 1.7em; max-width: 1.7em;
+      height: 1.2em; padding: 0.08em 0.22em;
+      border: 2px solid transparent; border-radius: 8px;
+      line-height: 1.2em; font-weight: 900; font-variant-numeric: tabular-nums;
+    }
+    .numbox.ph { border-color: #efe4ea; background: #fff; }
+    .sheet {
+      position: relative;
+      width: 100%; height: 100%; min-height: 0;
+      display: flex; align-items: stretch; justify-content: center;
+      box-sizing: border-box;
+      padding-right: clamp(168px, 18vw, 230px);
+      font-weight: 900;
+    }
+    .stack {
+      flex: 0 1 auto; min-height: 0; width: max-content; max-width: 100%; align-self: stretch;
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+      gap: clamp(10px, 1.6vh, 18px);
+      padding-top: clamp(8px, 1.4vh, 16px);
+      font-size: clamp(32px, 5.2vh, 48px);
+    }
+    .phbox {
+      display: inline-block; box-sizing: content-box;
+      width: 1.7em; height: 1.2em; padding: 0.08em 0.22em;
+      border: 2px solid #efe4ea; border-radius: 8px; background: #fff;
+    }
+    .ladder-col { position: absolute; right: 8px; left: auto; top: 8px; transform: none; }
+    .lines {
+      display: grid; grid-template-columns: auto auto auto auto auto;
+      align-items: center; justify-content: center; justify-items: stretch;
+      column-gap: 0.35em; row-gap: clamp(12px, 2.2vh, 22px);
+    }
+    .lines.mixed { grid-template-columns: auto auto auto auto auto auto auto; }
+    .wcell { display: flex; align-items: center; justify-content: center; }
+    .wcell.L { justify-content: flex-end; }
+    .wcell.R { justify-content: flex-start; }
+    .wcell.opcell { justify-content: center; }
+    .qline, .wrow { display: contents; }
+    .weq { justify-self: center; line-height: 1; }
+    .wtag {
+      justify-self: end; align-self: center;
+      font-size: 0.52em; letter-spacing: 0.08em; color: #5a4a72; white-space: nowrap;
+    }
+    .wtag.go { color: #1a8f7c; }
+    .wtag.br { color: #c56a00; }
+    .wrow.wait > * { opacity: 0.32; }
+    .mix { display: inline-flex; align-items: center; gap: 0.22em; }
+    .whole { font-variant-numeric: tabular-nums; line-height: 1; }
+    .op { color: var(--pink-deep); min-width: 0.7em; text-align: center; }
+    .stack .frac { font-size: 0.96em; min-width: 0; }
+    @media (max-height: 720px) {
+      .stack { font-size: clamp(26px, 4.4vh, 34px); }
+    }
+
+    @media (max-height: 720px) {
+      .stat .miss3 { font-size: 12px; line-height: 1.35; }
+      .mascot { width: 56px; height: 56px; font-size: 26px; }
+      .mascot svg { width: 34px; }
+      .teacher-btn, .login-acts .teacher-btn { width: 52px; height: 52px; min-width: 52px; flex-basis: 52px; font-size: 12px; }
+      .hintbar { font-size: 17px; padding: 6px 10px; }
+      .sheet {
+        --q: clamp(18px, 2.9vh, 22px);
+        --l: clamp(22px, 3.3vh, 26px);
+        --row: clamp(50px, 7.4vh, 62px);
+        --gap: clamp(8px, 1.35vh, 14px);
+      }
+      .choice-row .candy { padding: 10px 6px; font-size: 16px; }
+      .key { font-size: 16px; padding: 6px 0; }
+      .key.del, .key.done { font-size: 14px; }
+      .key-acts .key { min-width: 64px; padding: 6px 8px; }
+      .dcell { border-bottom-width: 4px; }
+      .nrow { border-left-width: 4px; border-bottom-width: 4px; }
+    }
+    @media print {
+      html, body, .app, .screen.active { position: static; height: auto; overflow: visible; }
+      .no-print, canvas, .fun-bg, .report, .modal, .filter-menu, .filter-btn { display: none !important; }
+      .records { overflow: visible; }
+      body { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <div class="fun-bg" aria-hidden="true">
+    <div class="deco deco-lt"><svg viewBox="0 0 32 32" preserveAspectRatio="xMidYMid meet"><path d="M16 16 L16 3 A13 13 0 1 1 3 16 Z" fill="#ff8a5c" fill-opacity="0.65"/></svg></div>
+    <div class="deco deco-lbl"><svg viewBox="0 0 32 32" preserveAspectRatio="xMidYMid meet"><path d="M16 16 L16 3 A13 13 0 0 1 16 29 Z" fill="#3ec6b8" fill-opacity="0.6"/></svg></div>
+    <div class="deco deco-lbr"><svg viewBox="0 0 32 32" preserveAspectRatio="xMidYMid meet"><path d="M16 16 L29 16 A13 13 0 0 1 9 27 Z" fill="#ffc14d" fill-opacity="0.65"/></svg></div>
+    <div class="deco deco-rt"><svg viewBox="0 0 32 32" preserveAspectRatio="xMidYMid meet"><path d="M16 16 L16 3 A13 13 0 1 1 6 26 Z" fill="#f08bb8" fill-opacity="0.6"/></svg></div>
+    <div class="deco deco-rbl"><svg viewBox="0 0 32 32" preserveAspectRatio="xMidYMid meet"><path d="M16 16 L22 5 A13 13 0 0 1 10 27 Z" fill="#7aa2ff" fill-opacity="0.65"/></svg></div>
+    <div class="deco deco-rbr"><svg viewBox="0 0 32 32" preserveAspectRatio="xMidYMid meet"><path d="M16 16 L16 3 A13 13 0 0 1 29 16 Z" fill="#ffb088" fill-opacity="0.6"/></svg></div>
+  </div>
+  <canvas id="confetti"></canvas>
+  <div class="app">
+    <section id="screen-login" class="screen active">
+      <div class="card login">
+        <div class="mascot" aria-hidden="true">
+          <svg viewBox="0 0 32 32" focusable="false">
+            <defs>
+              <linearGradient id="mascotPie" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#ffd0b8"/>
+                <stop offset="1" stop-color="#ff8a5c"/>
+              </linearGradient>
+            </defs>
+            <circle cx="16" cy="16" r="12" fill="#fff" stroke="#3b2a55" stroke-width="1.4"/>
+            <path d="M16 16 L16 4 A12 12 0 1 1 5 22 Z" fill="url(#mascotPie)" stroke="#3b2a55" stroke-width="1.4" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h1 class="title" id="titleWave"></h1>
+        <div class="field">
+          <label for="classId">班別</label>
+          <input id="classId" maxlength="5" placeholder="5A" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+        </div>
+        <div class="field">
+          <label for="studentId">學號</label>
+          <input id="studentId" maxlength="5" placeholder="01" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+        </div>
+        <button class="candy pink start" id="startBtn">開始任務</button>
+        <div class="login-acts">
+          <button class="candy mint teacher-btn" id="rankBtn">學生<br>排行</button>
+          <button class="candy lilac teacher-btn" id="teacherBtn">老師<br>後台</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-game" class="screen">
+      <div class="topbar">
+        <div class="pill" id="playerPill">5A 01</div>
+        <div class="pill" id="qPill">第 1 題</div>
+        <div class="timer-wrap">
+          <div class="pill timer" id="timer">⏱️ 06:00</div>
+          <span class="time-hit" id="timeHit" aria-hidden="true">−5秒</span>
+        </div>
+        <button class="candy ghost tiny no-print" id="backLoginBtn">主頁</button>
+      </div>
+      <div class="card play">
+        <div class="task-h">
+          <h2 id="taskTitle">任務一：真分數</h2>
+          <p id="taskKind">短除</p>
+        </div>
+        <div class="hintbar" id="hintBar">請填除數</div>
+        <div class="board" id="board"><div class="stage" id="stage"></div></div>
+        <div class="dock" id="dock"></div>
+      </div>
+    </section>
+
+    <section id="screen-dash" class="screen">
+      <div class="dash-h">
+        <h1>老師後台</h1>
+        <div class="acts no-print">
+          <button class="candy lemon tiny" id="printBtn">列印</button>
+          <button class="candy sky tiny" id="refreshDashBtn">重新整理</button>
+          <button class="candy ghost tiny" id="dashBackBtn">返回</button>
+        </div>
+      </div>
+      <div class="card dash">
+        <div class="stats" id="analysisCards"></div>
+        <div class="tools">
+          <strong>全班紀錄 <small id="dashSource" class="dash-src"></small></strong>
+          <div class="tool-filters">
+            <select id="classFilter" aria-label="班別"></select>
+            <span class="dash-count" id="dashCount"></span>
+            <button type="button" class="tiny" id="clearFiltersBtn">清除篩選</button>
+          </div>
+        </div>
+        <div class="records" id="studentRecords"></div>
+      </div>
+    </section>
+
+    <section id="screen-rank" class="screen">
+      <div class="dash-h">
+        <h1>學生排行</h1>
+        <div class="acts no-print">
+          <button class="candy sky tiny" id="rankRefreshBtn">重新整理</button>
+          <button class="candy ghost tiny" id="rankBackBtn">返回</button>
+        </div>
+      </div>
+      <div class="card dash">
+        <p class="rank-note">✨ 數學之星 ✨</p>
+        <div class="records" id="rankRecords"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="report" id="reportModal">
+    <div class="report-card">
+      <div class="mascot">🏆</div>
+      <h2>成績診斷卡</h2>
+      <p id="reportScore"></p>
+      <div class="tip" id="reportTip"></div>
+      <button class="candy pink" id="reportBackBtn">完成</button>
+    </div>
+  </div>
+  <div id="dashFilterMenu" class="filter-menu"></div>
+  <div class="modal" id="pinModal">
+    <div class="modal-card">
+      <h3>老師後台</h3>
+      <input id="pinInput" type="password" maxlength="8" inputmode="numeric" autocomplete="off" />
+      <div class="choice-row">
+        <button class="candy ghost" id="pinCancel">取消</button>
+        <button class="candy lilac" id="pinOk">確認</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyGGhtjy7bKzw9M-divK5BZYL0mGcHJwcNoV_xv8VAUalMu_U9ptg8A8wIRQ8cpvQxv/exec";
+      const GAME_ID = "p5ma-ch10";
+      const CHAPTER = "p5ma-ch10";
+      const STORE_KEY = "p5ma-ch10-v1";
+      const GAME_SECS = 360;
+      const PENALTY_SECS = 5;
+      const TITLE = "通分大師：分數加減";
+      const MISS_KEYS = [
+        ["div", "短除除數錯誤"],
+        ["open", "短除未完成"],
+        ["lcm", "最小公倍數錯誤"],
+        ["den", "擴分未用最小公倍數"],
+        ["num", "擴分乘數不一致"],
+        ["add", "分子加減錯誤"],
+        ["whole", "整數部分計算錯誤"],
+        ["carry", "帶分數未進位"],
+        ["br", "帶分數未退位"],
+        ["simp", "答案未約至最簡"]
+      ];
+      // 淺、中、深。第 1–2 題用淺，第 3–4 題用中，之後用深。同一層隨機，左右次序再隨機。
+      const TWO = [
+        [
+          [1, 2, 3, 4], [2, 3, 5, 6], [7, 8, 3, 4], [3, 4, 5, 8],
+          [5, 8, 1, 2], [2, 3, 4, 9], [3, 5, 7, 10], [7, 10, 1, 2],
+          [3, 4, 5, 6], [5, 6, 1, 4], [7, 12, 1, 4], [5, 6, 7, 12]
+        ],
+        [
+          [3, 7, 5, 14], [2, 5, 7, 15], [5, 8, 9, 16], [5, 6, 7, 9],
+          [4, 9, 5, 6], [8, 9, 5, 6], [3, 4, 7, 10], [7, 20, 3, 10],
+          [2, 7, 5, 21], [5, 8, 7, 12], [3, 8, 5, 6], [7, 8, 5, 6]
+        ],
+        [
+          [4, 15, 3, 10], [5, 6, 7, 10], [7, 10, 11, 15], [5, 12, 7, 18],
+          [4, 9, 7, 12], [5, 9, 7, 12], [5, 8, 7, 10], [7, 8, 11, 20],
+          [5, 14, 8, 21], [8, 21, 5, 6], [7, 16, 5, 12], [9, 25, 7, 10]
+        ]
+      ];
+      const THREE = [
+        [
+          [[1, 2], [2, 3], [5, 6]], [[1, 2], [3, 4], [5, 8]], [[1, 2], [3, 4], [7, 8]],
+          [[3, 8], [1, 2], [3, 4]], [[1, 2], [3, 5], [7, 10]], [[1, 2], [2, 3], [3, 4]],
+          [[2, 3], [3, 4], [5, 6]], [[1, 3], [3, 4], [5, 6]], [[1, 4], [2, 3], [5, 6]],
+          [[1, 2], [5, 6], [7, 12]]
+        ],
+        [
+          [[1, 2], [2, 3], [7, 9]], [[1, 2], [5, 6], [4, 9]], [[1, 2], [3, 4], [7, 10]],
+          [[1, 4], [3, 5], [7, 10]], [[2, 3], [3, 4], [5, 8]], [[1, 3], [3, 4], [5, 8]],
+          [[1, 3], [5, 6], [7, 8]], [[3, 4], [5, 6], [7, 8]], [[1, 2], [5, 8], [7, 12]],
+          [[1, 4], [3, 8], [5, 12]]
+        ],
+        [
+          [[5, 7], [1, 2], [3, 4]], [[1, 2], [2, 3], [7, 10]], [[1, 3], [2, 5], [5, 6]],
+          [[2, 5], [5, 6], [7, 10]], [[2, 3], [3, 4], [5, 9]], [[1, 4], [5, 6], [7, 9]],
+          [[3, 4], [5, 9], [7, 12]], [[2, 9], [1, 3], [5, 12]], [[5, 8], [3, 5], [7, 10]],
+          [[1, 2], [5, 8], [7, 10]]
+        ]
+      ];
+
+      const state = {
+        classId: "", studentId: "",
+        qIndex: 1, remain: GAME_SECS, ended: false, busy: false,
+        done: 0, qTimes: [], qStart: 0, sheetSent: false,
+        miss: blankMiss(), q: null
+      };
+      let audioCtx = null, countId = null, bag2 = [[], [], []], bag3 = [[], [], []], animTimer = 0;
+      let sheetLogsCache = null, dashSeq = 0, dashAllLogs = [], rankSeq = 0;
+      let dashClass = "ALL", dashSort = { col: "student", dir: "asc" };
+      let dashFilters = {}, dashMenuCol = "";
+      const DASH_COLS = [
+        { key: "student", label: "班別學號", numeric: false },
+        { key: "score", label: "答對題數", numeric: true },
+        { key: "avg", label: "平均用時(秒)", numeric: true },
+        { key: "diagnosis", label: "診斷", numeric: false },
+        { key: "time", label: "時間", numeric: false }
+      ];
+      const $ = (id) => document.getElementById(id);
+      const screens = { login: $("screen-login"), game: $("screen-game"), dash: $("screen-dash"), rank: $("screen-rank") };
+
+      function blankMiss() {
+        return { div: 0, open: 0, lcm: 0, den: 0, num: 0, add: 0, whole: 0, carry: 0, br: 0, simp: 0 };
+      }
+      function gcd(a, b) {
+        a = Math.abs(a); b = Math.abs(b);
+        while (b) { const t = a % b; a = b; b = t; }
+        return a || 1;
+      }
+      function lcm(a, b) { return Math.abs(a) / gcd(a, b) * Math.abs(b); }
+      function lcmAll(nums) { return nums.reduce((p, n) => lcm(p, n), 1); }
+      function shares(nums) {
+        for (let i = 0; i < nums.length; i++) {
+          for (let j = i + 1; j < nums.length; j++) {
+            if (gcd(nums[i], nums[j]) > 1) return true;
+          }
+        }
+        return false;
+      }
+      function splitRow(nums, d) {
+        const copies = nums.map((n) => n % d !== 0);
+        const next = nums.map((n, i) => (copies[i] ? n : n / d));
+        return { copies, next };
+      }
+      function workProduct(divs, bottom) {
+        return divs.concat(bottom).reduce((p, n) => p * n, 1);
+      }
+      function showScreen(name) {
+        Object.keys(screens).forEach((key) => screens[key].classList.toggle("active", key === name));
+        if (name !== "game") stopCountdown();
+      }
+      function bounce(el) {
+        if (!el) return;
+        el.classList.remove("bounce");
+        void el.offsetWidth;
+        el.classList.add("bounce");
+      }
+      function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+        return a;
+      }
+      function takeTier(bags, tiers, stage) {
+        const tier = Math.min(stage, tiers.length - 1);
+        const bag = bags[tier];
+        if (!bag.length) tiers[tier].forEach((_, i) => bag.push(i));
+        const i = Math.floor(Math.random() * bag.length);
+        return tiers[tier][bag.splice(i, 1)[0]];
+      }
+      function fracHTML(n, d) {
+        return `<span class="frac"><b>${n}</b><i></i><b>${d}</b></span>`;
+      }
+      function box(text, on, bad) {
+        return `<span class="slotbox${on ? " on" : ""}${bad ? " bad" : ""}">${text === "" ? "" : text}</span>`;
+      }
+      function setHint(text) { $("hintBar").textContent = text; }
+      function phaseName(phase) {
+        if (phase === "div") return "短除";
+        if (phase === "lcm") return "最小公倍數";
+        if (phase === "exp") return "擴分";
+        return "比較";
+      }
+      function settleDiv(q) {
+        const bottom = q.rows[q.rows.length - 1];
+        if (shares(bottom)) return false;
+        q.lcm = workProduct(q.divs, bottom);
+        q.phase = "lcm";
+        q.entry = "";
+        return true;
+      }
+
+      $("titleWave").innerHTML = [...TITLE].map((ch, i) =>
+        `<span style="display:inline-block;animation:floaty 2.4s ${i * 0.08}s ease-in-out infinite">${ch}</span>`
+      ).join("");
+
+      function loadStore() {
+        try {
+          const raw = localStorage.getItem(STORE_KEY);
+          if (!raw) return { students: {}, logs: [] };
+          const data = JSON.parse(raw);
+          return { students: data.students || {}, logs: Array.isArray(data.logs) ? data.logs : [] };
+        } catch (e) { return { students: {}, logs: [] }; }
+      }
+      function saveStore(data) { localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
+      function keepCode(value) {
+        return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
+      }
+      function normalizeId(id) {
+        const raw = String(id || "").trim();
+        return /^\d+$/.test(raw) ? raw.padStart(2, "0") : raw;
+      }
+      function studentKey(c, s) { return `${c}__${normalizeId(s)}`; }
+      function nowText() {
+        const d = new Date();
+        const p = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+      }
+      function ensureStudent() {
+        const db = loadStore();
+        const key = studentKey(state.classId, state.studentId);
+        if (!db.students[key]) {
+          db.students[key] = { classId: state.classId, studentId: normalizeId(state.studentId) };
+          saveStore(db);
+        }
+        return key;
+      }
+      function realAttempt() {
+        return state.done > 0 || MISS_KEYS.some(([k]) => state.miss[k] > 0);
+      }
+      function diagnose() {
+        const items = MISS_KEYS.filter(([k]) => state.miss[k] > 0).map(([k, label]) => `${label}（${state.miss[k]}次）`);
+        if (!items.length) return { short: "零失誤", sheet: "零失誤", tip: "零失誤\n🌟 做得好啊" };
+        const bullets = items.map((s) => "• " + s).join("\n");
+        return { short: bullets, sheet: bullets, tip: bullets + "\n💪 再接再厲吧" };
+      }
+      function sheetConfigured() {
+        return /^https:\/\/script\.google\.com\/macros\/s\/(?!YOUR_SCRIPT_ID\b)[^/]+\/exec\/?$/.test(GOOGLE_SHEET_URL);
+      }
+      function sendToGoogleSheet(d) {
+        if (state.sheetSent || !sheetConfigured() || !realAttempt()) return;
+        state.sheetSent = true;
+        const avg = state.done ? Math.round(state.qTimes.reduce((x, y) => x + y, 0) / state.done) : 0;
+        const payload = {
+          game: GAME_ID, chapter: CHAPTER,
+          student: `${state.classId} (${normalizeId(state.studentId)})`,
+          score: state.done, avgTime: `${avg}秒`, diagnostic: d.sheet
+        };
+        try {
+          fetch(GOOGLE_SHEET_URL, {
+            method: "POST", mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
+          }).catch(function () {});
+        } catch (err) {}
+      }
+      function parseSheetStudent(s) {
+        const m = String(s || "").match(/^(.+?)\s*\(([^)]+)\)/);
+        if (m) return { classId: m[1].trim(), studentId: normalizeId(m[2].trim()) };
+        return { classId: "", studentId: String(s || "").trim() };
+      }
+      function parseAvgSec(s) {
+        const m = String(s || "").match(/(\d+)/);
+        return m ? Number(m[1]) : 0;
+      }
+      function rowsToLogs(rows) {
+        return (rows || []).map((r) => {
+          const who = parseSheetStudent(r.student);
+          return {
+            classId: who.classId, studentId: who.studentId,
+            done: Number(r.score) || 0, avgSec: parseAvgSec(r.avgTime),
+            diagnosis: String(r.diagnostic || ""), time: r.time || ""
+          };
+        }).filter((e) => e.studentId || e.classId);
+      }
+      function jsonpSheet(url) {
+        return new Promise((resolve, reject) => {
+          const cb = "p5ch10Dash" + Date.now();
+          const s = document.createElement("script");
+          const timer = setTimeout(() => { cleanup(); reject(new Error("timeout")); }, 15000);
+          function cleanup() {
+            clearTimeout(timer);
+            try { delete window[cb]; } catch (err) { window[cb] = undefined; }
+            if (s.parentNode) s.parentNode.removeChild(s);
+          }
+          window[cb] = function (data) { cleanup(); resolve(data); };
+          s.onerror = function () { cleanup(); reject(new Error("script")); };
+          s.src = url + (url.indexOf("?") >= 0 ? "&" : "?") + "callback=" + cb;
+          document.body.appendChild(s);
+        });
+      }
+      let dashPin = "";
+      let dashLogsCache = null;
+      async function loadSheetLogs(force, pin) {
+        const forDash = !!pin;
+        if (!forDash && sheetLogsCache && !force) return sheetLogsCache;
+        if (forDash && dashLogsCache && !force) return dashLogsCache;
+        if (!sheetConfigured()) throw new Error("no-url");
+        let url = GOOGLE_SHEET_URL + "?game=" + encodeURIComponent(GAME_ID);
+        if (pin) url += "&pin=" + encodeURIComponent(pin);
+        let data = null;
+        try {
+          const res = await fetch(url, { method: "GET" });
+          if (!res.ok) throw new Error("http");
+          data = await res.json();
+        } catch (err) { data = await jsonpSheet(url); }
+        if (!data || !data.ok) throw new Error("bad");
+        const logs = rowsToLogs(data.rows);
+        if (forDash) dashLogsCache = logs;
+        else sheetLogsCache = logs;
+        return logs;
+      }
+      function saveSession() {
+        const d = diagnose();
+        if (!realAttempt()) return d;
+        const db = loadStore();
+        ensureStudent();
+        const avg = state.done ? Math.round(state.qTimes.reduce((a, b) => a + b, 0) / state.done) : 0;
+        db.logs.push({
+          classId: state.classId, studentId: normalizeId(state.studentId),
+          done: state.done, avgSec: avg, diagnosis: d.short, time: nowText()
+        });
+        saveStore(db);
+        return d;
+      }
+      function unlockAudio() {
+        if (!audioCtx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) audioCtx = new AC();
+        }
+        if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      }
+      function tone(freq, dur, type, gain) {
+        if (!audioCtx) return;
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = type || "sine"; o.frequency.value = freq; g.gain.value = gain || 0.05;
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start();
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        o.stop(audioCtx.currentTime + dur);
+      }
+      function sfx(kind) {
+        unlockAudio();
+        if (kind === "ok") {
+          tone(523, 0.1, "triangle");
+          setTimeout(() => tone(659, 0.1, "triangle"), 80);
+          setTimeout(() => tone(784, 0.16, "triangle"), 160);
+        } else if (kind === "bad") tone(180, 0.2, "sawtooth", 0.04);
+        else if (kind === "win") [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, 0.14, "triangle"), i * 100));
+      }
+      function renderTimer() {
+        const s = Math.max(0, state.remain);
+        $("timer").textContent = `⏱️ ${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+        $("timer").classList.toggle("low", s <= 15);
+      }
+      function applyPenalty() {
+        if (state.ended) return;
+        state.remain = Math.max(0, state.remain - PENALTY_SECS);
+        renderTimer();
+        const timer = $("timer"), hit = $("timeHit");
+        if (timer) {
+          timer.classList.remove("hit");
+          void timer.offsetWidth;
+          timer.classList.add("hit");
+          setTimeout(() => timer.classList.remove("hit"), 420);
+        }
+        if (hit) {
+          hit.classList.remove("show");
+          void hit.offsetWidth;
+          hit.classList.add("show");
+          setTimeout(() => hit.classList.remove("show"), 720);
+        }
+        if (state.remain <= 0) endSession();
+      }
+      function stopCountdown() { clearInterval(countId); countId = null; }
+      function startCountdown() {
+        stopCountdown();
+        state.remain = GAME_SECS; state.ended = false; renderTimer();
+        countId = setInterval(() => {
+          if (state.ended) return;
+          state.remain -= 1; renderTimer();
+          if (state.remain <= 0) endSession();
+        }, 1000);
+      }
+      function endSession() {
+        if (state.ended) return;
+        state.ended = true; state.remain = 0; renderTimer(); stopCountdown();
+        const d = saveSession();
+        sendToGoogleSheet(d);
+        $("reportScore").textContent = `6 分鐘內答對 ${state.done} 題`;
+        $("reportTip").textContent = d.tip;
+        $("reportModal").classList.add("show");
+        if (realAttempt()) { burstConfetti(160); sfx("win"); }
+      }
+
+      const TIERS = [
+        [
+          { op: "+", a: { w: 0, n: 2, d: 9 }, b: { w: 0, n: 1, d: 6 } },
+          { op: "+", a: { w: 0, n: 3, d: 8 }, b: { w: 0, n: 5, d: 12 } },
+          { op: "+", a: { w: 0, n: 4, d: 9 }, b: { w: 0, n: 5, d: 12 } },
+          { op: "+", a: { w: 0, n: 3, d: 10 }, b: { w: 0, n: 4, d: 15 } },
+          { op: "+", a: { w: 0, n: 3, d: 10 }, b: { w: 0, n: 7, d: 15 } },
+          { op: "+", a: { w: 0, n: 5, d: 12 }, b: { w: 0, n: 5, d: 18 } },
+          { op: "+", a: { w: 0, n: 5, d: 12 }, b: { w: 0, n: 7, d: 18 } },
+          { op: "+", a: { w: 0, n: 3, d: 4 }, b: { w: 0, n: 3, d: 14 } },
+          { op: "+", a: { w: 0, n: 3, d: 8 }, b: { w: 0, n: 3, d: 10 } },
+          { op: "+", a: { w: 0, n: 3, d: 8 }, b: { w: 0, n: 7, d: 12 } },
+          { op: "+", a: { w: 0, n: 3, d: 8 }, b: { w: 0, n: 3, d: 20 } },
+          { op: "+", a: { w: 0, n: 3, d: 8 }, b: { w: 0, n: 7, d: 20 } },
+          { op: "+", a: { w: 0, n: 2, d: 9 }, b: { w: 0, n: 5, d: 12 } },
+          { op: "+", a: { w: 0, n: 3, d: 4 }, b: { w: 0, n: 3, d: 22 } },
+          { op: "+", a: { w: 0, n: 4, d: 9 }, b: { w: 0, n: 4, d: 15 } },
+          { op: "+", a: { w: 0, n: 4, d: 9 }, b: { w: 0, n: 7, d: 15 } },
+          { op: "+", a: { w: 0, n: 4, d: 9 }, b: { w: 0, n: 5, d: 18 } },
+          { op: "+", a: { w: 0, n: 4, d: 9 }, b: { w: 0, n: 4, d: 27 } },
+          { op: "+", a: { w: 0, n: 4, d: 9 }, b: { w: 0, n: 5, d: 27 } },
+          { op: "+", a: { w: 0, n: 3, d: 10 }, b: { w: 0, n: 7, d: 20 } },
+          { op: "+", a: { w: 0, n: 3, d: 10 }, b: { w: 0, n: 11, d: 20 } },
+          { op: "+", a: { w: 0, n: 5, d: 12 }, b: { w: 0, n: 3, d: 16 } },
+          { op: "+", a: { w: 0, n: 5, d: 12 }, b: { w: 0, n: 5, d: 16 } },
+          { op: "+", a: { w: 0, n: 5, d: 12 }, b: { w: 0, n: 7, d: 24 } },
+          { op: "+", a: { w: 0, n: 7, d: 12 }, b: { w: 0, n: 5, d: 24 } },
+          { op: "+", a: { w: 0, n: 3, d: 14 }, b: { w: 0, n: 8, d: 21 } },
+          { op: "+", a: { w: 0, n: 3, d: 14 }, b: { w: 0, n: 10, d: 21 } },
+          { op: "+", a: { w: 0, n: 3, d: 14 }, b: { w: 0, n: 9, d: 28 } },
+          { op: "+", a: { w: 0, n: 3, d: 14 }, b: { w: 0, n: 11, d: 28 } },
+          { op: "+", a: { w: 0, n: 3, d: 16 }, b: { w: 0, n: 11, d: 24 } }
+        ],
+        [
+          { op: "+", a: { w: 2, n: 3, d: 4 }, b: { w: 2, n: 7, d: 10 } },
+          { op: "+", a: { w: 2, n: 3, d: 4 }, b: { w: 2, n: 9, d: 10 } },
+          { op: "+", a: { w: 6, n: 3, d: 4 }, b: { w: 2, n: 9, d: 14 } },
+          { op: "+", a: { w: 1, n: 3, d: 4 }, b: { w: 1, n: 11, d: 14 } },
+          { op: "+", a: { w: 1, n: 3, d: 4 }, b: { w: 2, n: 7, d: 18 } },
+          { op: "+", a: { w: 2, n: 3, d: 4 }, b: { w: 1, n: 11, d: 18 } },
+          { op: "+", a: { w: 3, n: 5, d: 6 }, b: { w: 1, n: 3, d: 8 } },
+          { op: "+", a: { w: 4, n: 5, d: 6 }, b: { w: 2, n: 5, d: 8 } },
+          { op: "+", a: { w: 1, n: 5, d: 6 }, b: { w: 3, n: 4, d: 9 } },
+          { op: "+", a: { w: 3, n: 5, d: 6 }, b: { w: 2, n: 5, d: 9 } },
+          { op: "+", a: { w: 5, n: 5, d: 6 }, b: { w: 1, n: 8, d: 15 } },
+          { op: "+", a: { w: 2, n: 5, d: 6 }, b: { w: 3, n: 11, d: 15 } },
+          { op: "+", a: { w: 4, n: 3, d: 8 }, b: { w: 1, n: 11, d: 12 } },
+          { op: "+", a: { w: 6, n: 5, d: 8 }, b: { w: 1, n: 7, d: 12 } },
+          { op: "+", a: { w: 1, n: 4, d: 9 }, b: { w: 4, n: 11, d: 12 } },
+          { op: "+", a: { w: 3, n: 5, d: 9 }, b: { w: 3, n: 7, d: 12 } },
+          { op: "+", a: { w: 5, n: 3, d: 10 }, b: { w: 2, n: 14, d: 15 } },
+          { op: "+", a: { w: 2, n: 7, d: 10 }, b: { w: 4, n: 8, d: 15 } },
+          { op: "+", a: { w: 4, n: 5, d: 12 }, b: { w: 3, n: 13, d: 18 } },
+          { op: "+", a: { w: 1, n: 7, d: 12 }, b: { w: 5, n: 11, d: 18 } },
+          { op: "+", a: { w: 3, n: 3, d: 4 }, b: { w: 4, n: 5, d: 6 } },
+          { op: "+", a: { w: 2, n: 3, d: 8 }, b: { w: 2, n: 9, d: 10 } },
+          { op: "+", a: { w: 6, n: 5, d: 8 }, b: { w: 2, n: 7, d: 10 } },
+          { op: "+", a: { w: 1, n: 5, d: 8 }, b: { w: 1, n: 11, d: 20 } },
+          { op: "+", a: { w: 1, n: 5, d: 8 }, b: { w: 2, n: 13, d: 20 } },
+          { op: "+", a: { w: 2, n: 3, d: 4 }, b: { w: 1, n: 9, d: 22 } },
+          { op: "+", a: { w: 3, n: 3, d: 4 }, b: { w: 1, n: 13, d: 22 } },
+          { op: "+", a: { w: 4, n: 3, d: 4 }, b: { w: 2, n: 11, d: 24 } },
+          { op: "+", a: { w: 1, n: 3, d: 4 }, b: { w: 3, n: 13, d: 24 } },
+          { op: "+", a: { w: 3, n: 5, d: 6 }, b: { w: 2, n: 5, d: 16 } }
+        ],
+        [
+          { op: "-", a: { w: 0, n: 5, d: 6 }, b: { w: 0, n: 3, d: 10 } },
+          { op: "-", a: { w: 0, n: 5, d: 6 }, b: { w: 0, n: 2, d: 15 } },
+          { op: "-", a: { w: 0, n: 5, d: 6 }, b: { w: 0, n: 8, d: 15 } },
+          { op: "-", a: { w: 0, n: 3, d: 4 }, b: { w: 0, n: 3, d: 20 } },
+          { op: "-", a: { w: 0, n: 3, d: 4 }, b: { w: 0, n: 3, d: 28 } },
+          { op: "-", a: { w: 0, n: 3, d: 4 }, b: { w: 0, n: 5, d: 28 } },
+          { op: "-", a: { w: 0, n: 5, d: 6 }, b: { w: 0, n: 3, d: 14 } },
+          { op: "-", a: { w: 0, n: 5, d: 6 }, b: { w: 0, n: 5, d: 14 } },
+          { op: "-", a: { w: 0, n: 5, d: 6 }, b: { w: 0, n: 4, d: 21 } },
+          { op: "-", a: { w: 0, n: 5, d: 6 }, b: { w: 0, n: 10, d: 21 } },
+          { op: "-", a: { w: 0, n: 5, d: 6 }, b: { w: 0, n: 5, d: 24 } },
+          { op: "-", a: { w: 0, n: 7, d: 8 }, b: { w: 0, n: 7, d: 24 } },
+          { op: "-", a: { w: 0, n: 9, d: 10 }, b: { w: 0, n: 3, d: 20 } },
+          { op: "-", a: { w: 0, n: 11, d: 12 }, b: { w: 0, n: 7, d: 24 } },
+          { op: "-", a: { w: 0, n: 13, d: 14 }, b: { w: 0, n: 5, d: 28 } },
+          { op: "-", a: { w: 0, n: 7, d: 8 }, b: { w: 0, n: 5, d: 24 } },
+          { op: "-", a: { w: 0, n: 5, d: 6 }, b: { w: 0, n: 5, d: 18 } },
+          { op: "-", a: { w: 0, n: 5, d: 6 }, b: { w: 0, n: 7, d: 18 } },
+          { op: "-", a: { w: 0, n: 5, d: 6 }, b: { w: 0, n: 11, d: 24 } },
+          { op: "-", a: { w: 0, n: 7, d: 12 }, b: { w: 0, n: 5, d: 24 } },
+          { op: "-", a: { w: 0, n: 13, d: 14 }, b: { w: 0, n: 2, d: 21 } },
+          { op: "-", a: { w: 0, n: 27, d: 28 }, b: { w: 0, n: 3, d: 14 } },
+          { op: "-", a: { w: 0, n: 3, d: 4 }, b: { w: 0, n: 7, d: 20 } },
+          { op: "-", a: { w: 0, n: 5, d: 6 }, b: { w: 0, n: 1, d: 10 } },
+          { op: "-", a: { w: 0, n: 9, d: 10 }, b: { w: 0, n: 1, d: 15 } },
+          { op: "-", a: { w: 0, n: 14, d: 15 }, b: { w: 0, n: 1, d: 10 } },
+          { op: "-", a: { w: 0, n: 8, d: 9 }, b: { w: 0, n: 1, d: 18 } },
+          { op: "-", a: { w: 0, n: 17, d: 18 }, b: { w: 0, n: 1, d: 9 } },
+          { op: "-", a: { w: 0, n: 17, d: 20 }, b: { w: 0, n: 1, d: 10 } },
+          { op: "-", a: { w: 0, n: 19, d: 21 }, b: { w: 0, n: 1, d: 14 } }
+        ],
+        [
+          { op: "-", a: { w: 7, n: 3, d: 8 }, b: { w: 1, n: 7, d: 12 } },
+          { op: "-", a: { w: 3, n: 3, d: 4 }, b: { w: 1, n: 9, d: 10 } },
+          { op: "-", a: { w: 5, n: 3, d: 4 }, b: { w: 2, n: 11, d: 14 } },
+          { op: "-", a: { w: 5, n: 3, d: 4 }, b: { w: 1, n: 13, d: 14 } },
+          { op: "-", a: { w: 5, n: 5, d: 6 }, b: { w: 3, n: 7, d: 8 } },
+          { op: "-", a: { w: 5, n: 5, d: 6 }, b: { w: 2, n: 8, d: 9 } },
+          { op: "-", a: { w: 5, n: 5, d: 6 }, b: { w: 1, n: 13, d: 15 } },
+          { op: "-", a: { w: 4, n: 3, d: 8 }, b: { w: 2, n: 5, d: 6 } },
+          { op: "-", a: { w: 6, n: 3, d: 8 }, b: { w: 3, n: 5, d: 12 } },
+          { op: "-", a: { w: 5, n: 4, d: 9 }, b: { w: 1, n: 5, d: 6 } },
+          { op: "-", a: { w: 4, n: 4, d: 9 }, b: { w: 2, n: 7, d: 12 } },
+          { op: "-", a: { w: 4, n: 4, d: 9 }, b: { w: 1, n: 11, d: 12 } },
+          { op: "-", a: { w: 6, n: 3, d: 10 }, b: { w: 2, n: 3, d: 4 } },
+          { op: "-", a: { w: 3, n: 3, d: 10 }, b: { w: 1, n: 8, d: 15 } },
+          { op: "-", a: { w: 6, n: 3, d: 10 }, b: { w: 3, n: 11, d: 15 } },
+          { op: "-", a: { w: 6, n: 5, d: 12 }, b: { w: 2, n: 11, d: 18 } },
+          { op: "-", a: { w: 3, n: 5, d: 12 }, b: { w: 1, n: 13, d: 18 } },
+          { op: "-", a: { w: 5, n: 4, d: 15 }, b: { w: 2, n: 5, d: 6 } },
+          { op: "-", a: { w: 7, n: 5, d: 18 }, b: { w: 3, n: 3, d: 4 } },
+          { op: "-", a: { w: 3, n: 7, d: 18 }, b: { w: 1, n: 3, d: 4 } },
+          { op: "-", a: { w: 5, n: 3, d: 4 }, b: { w: 2, n: 5, d: 6 } },
+          { op: "-", a: { w: 5, n: 3, d: 8 }, b: { w: 1, n: 7, d: 10 } },
+          { op: "-", a: { w: 4, n: 3, d: 8 }, b: { w: 2, n: 9, d: 10 } },
+          { op: "-", a: { w: 4, n: 3, d: 8 }, b: { w: 1, n: 9, d: 20 } },
+          { op: "-", a: { w: 7, n: 3, d: 8 }, b: { w: 3, n: 11, d: 20 } },
+          { op: "-", a: { w: 4, n: 5, d: 6 }, b: { w: 2, n: 15, d: 16 } },
+          { op: "-", a: { w: 4, n: 4, d: 9 }, b: { w: 1, n: 7, d: 15 } },
+          { op: "-", a: { w: 6, n: 4, d: 9 }, b: { w: 2, n: 8, d: 15 } },
+          { op: "-", a: { w: 5, n: 4, d: 9 }, b: { w: 3, n: 13, d: 18 } },
+          { op: "-", a: { w: 4, n: 5, d: 9 }, b: { w: 1, n: 11, d: 18 } }
+        ]
+      ];
+      const BANK = TIERS.reduce((all, tier) => all.concat(tier), []);
+      let tierBags = [[], [], [], []];
+      function loadBags() {
+        try {
+          const raw = sessionStorage.getItem(STORE_KEY + "-bags3");
+          const data = raw ? JSON.parse(raw) : null;
+          if (data && data.length === 4) tierBags = data;
+        } catch (e) {}
+      }
+      function saveBags() {
+        if (state.orderFixed) return;
+        try { sessionStorage.setItem(STORE_KEY + "-bags3", JSON.stringify(tierBags)); } catch (e) {}
+      }
+      function refillBag(i) {
+        const bag = TIERS[i].map((_, k) => k);
+        tierBags[i] = state.orderFixed ? bag : shuffle(bag);
+      }
+      function takeItem() {
+        const i = (state.qIndex - 1) % TIERS.length;
+        if (!tierBags[i] || !tierBags[i].length) refillBag(i);
+        const k = tierBags[i].shift();
+        saveBags();
+        return TIERS[i][k];
+      }
+      loadBags();
+      function solve(a, b, op) {
+        const L = lcm(a.d, b.d);
+        const an = a.n * (L / a.d);
+        const bn = b.n * (L / b.d);
+        const needBorrow = op === "-" && an < bn;
+        const brW = a.w - 1;
+        const brN = an + L;
+        const topN = needBorrow ? brN : an;
+        const topW = needBorrow ? brW : a.w;
+        const rawW0 = op === "+" ? a.w + b.w : topW - b.w;
+        const rawN0 = op === "+" ? an + bn : topN - bn;
+        const carry = rawN0 >= L;
+        let rawW, rawN, rawD, finW, finN, finD;
+        if (carry) {
+          rawW = rawW0; rawN = rawN0; rawD = L;
+          const extra = Math.floor(rawN0 / L);
+          const rem = rawN0 % L;
+          const g = gcd(rem, L);
+          finW = rawW0 + extra; finN = rem / g; finD = L / g;
+        } else {
+          const g = gcd(rawN0, L);
+          rawW = rawW0; rawN = rawN0 / g; rawD = L / g;
+          finW = rawW; finN = rawN; finD = rawD;
+        }
+        return { L, an, bn, needBorrow, brW, brN, carry, rawW, rawN, rawD, finW, finN, finD };
+      }
+      function makeQ(item) {
+        return {
+          a: item.a, b: item.b, op: item.op, sol: solve(item.a, item.b, item.op),
+          phase: "div",
+          rows: [[item.a.d, item.b.d]],
+          divs: [],
+          entry: "",
+          anim: null,
+          lcmTries: 0,
+          tries: {},
+          box: {},
+          bad: {},
+          focus: "an"
+        };
+      }
+      function kindName(phase) {
+        if (phase === "div") return "短除";
+        if (phase === "lcm") return "最小公倍數";
+        if (phase === "whole" || phase === "den" || phase === "exp") return "通分";
+        if (phase === "borrow") return "退位";
+        if (phase === "carry") return "進位";
+        return stepLabel(state.q);
+      }
+      function stepLabel(q) {
+        return q && q.op === "-" ? "相減" : "相加";
+      }
+      function renderAll() {
+        const q = state.q;
+        if (!q) return;
+        const mixed = q.a.w > 0 || q.b.w > 0;
+        $("taskTitle").textContent = mixed ? "任務二：帶分數" : "任務一：真分數";
+        $("taskKind").textContent = kindName(q.phase);
+        $("qPill").textContent = `第 ${state.qIndex} 題`;
+        $("playerPill").textContent = `${state.classId} ${normalizeId(state.studentId)}`;
+        const ladder = renderLadder(q);
+        $("stage").innerHTML = `<div class="sheet ${q.phase}"><div class="stack"><div class="lines${mixed ? " mixed" : ""}">${questionRow(q)}${tongRow(q)}${borrowRow(q)}${sumRow(q)}${carryRow(q)}</div></div>${ladder ? `<div class="ladder-col">${ladder}</div>` : ""}</div>`;
+        renderDock();
+      }
+      function renderDock() {
+        const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
+        $("dock").innerHTML = `<div class="keypad">${keys.map((k) => `<button type="button" class="key" data-key="${k}">${k}</button>`).join("")}</div><div class="key-acts"><button type="button" class="key del" data-key="del">刪除</button><button type="button" class="key go" data-key="ok">確定</button></div>`;
+      }
+      function renderLadder(q) {
+        if (!q.divs.length && q.phase !== "div") return "";
+        const cols = q.rows[0].length;
+        const anim = q.anim;
+        const divCells = q.rows.map((_, r) => {
+          if (r < q.divs.length) return `<div class="dcell"><b>${q.divs[r]}</b></div>`;
+          if (r === q.rows.length - 1 && q.phase === "div") return `<div class="dcell">${box(q.entry, true)}</div>`;
+          return `<div class="dcell"></div>`;
+        }).join("");
+        const numRows = q.rows.map((row, r) => {
+          const cells = row.map((n, c) => {
+            const fromCopy = anim && anim.from === r - 1 && anim.copies[c];
+            const arrow = anim && anim.from === r && anim.copies[c]
+              ? `<svg class="pull" viewBox="0 0 20 48" aria-hidden="true"><line x1="10" y1="2" x2="10" y2="32" stroke="#2c2144" stroke-width="3" stroke-linecap="round"/><polyline points="3,26 10,42 17,26" fill="none" stroke="#2c2144" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/></svg>`
+              : "";
+            return `<div class="ncell${fromCopy ? " fall" : ""}"><span class="digit">${n}</span>${arrow}</div>`;
+          }).join("");
+          const ruled = q.phase === "div" || r < q.rows.length - 1;
+          return `<div class="nrow${ruled ? " ruled" : ""}" style="grid-template-columns:repeat(${cols},2.4em)">${cells}</div>`;
+        }).join("");
+        return `<div class="lshape"><div class="ldivs">${divCells}</div><div class="lbody">${numRows}</div></div>`;
+      }
+      function factorExpr(q) {
+        return q.divs.concat(q.rows[q.rows.length - 1]).join("×");
+      }
+      function retryHint(q, key, short, extra) {
+        if (!q.tries) q.tries = {};
+        q.tries[key] = (q.tries[key] || 0) + 1;
+        return q.tries[key] >= 2 && extra ? short + " " + extra : short;
+      }
+      function wrongWholes(q, bad) {
+        const parts = [];
+        if (bad.indexOf("wa") >= 0) parts.push(String(q.a.w));
+        if (bad.indexOf("wb") >= 0) parts.push(String(q.b.w));
+        return parts.join("、");
+      }
+      function expandExpr(q, bad) {
+        const s = q.sol;
+        const parts = [];
+        if (bad.indexOf("an") >= 0) parts.push(q.a.n + "×" + (s.L / q.a.d));
+        if (bad.indexOf("bn") >= 0) parts.push(q.b.n + "×" + (s.L / q.b.d));
+        return parts.join("、");
+      }
+      function sumWholeExpr(q) {
+        const s = q.sol;
+        if (q.op === "+") return q.a.w + "+" + q.b.w;
+        const top = s.needBorrow ? s.brW : q.a.w;
+        return top + "−" + q.b.w;
+      }
+      function fracExpr(q, isCarry) {
+        const s = q.sol;
+        if (isCarry) return s.rawN + "−" + s.rawD;
+        const op = q.op === "+" ? "+" : "−";
+        const top = s.needBorrow ? s.brN : s.an;
+        return top + op + s.bn;
+      }
+      function fracDetail(q, bad, nk, dk, isCarry) {
+        const parts = [];
+        if (bad.indexOf(nk) >= 0) parts.push(fracExpr(q, isCarry));
+        if (bad.indexOf(dk) >= 0) parts.push("分母 " + factorExpr(q));
+        if (!parts.length) parts.push(fracExpr(q, isCarry));
+        return parts.join("，");
+      }
+      function carryExpr(q) {
+        const s = q.sol;
+        if (s.rawW > 0) return s.rawW + "+1";
+        return s.rawN + "−" + s.rawD;
+      }
+      function termPrinted(f) {
+        const w = f.w ? `<span class="whole">${f.w}</span>` : "";
+        return `<span class="mix">${w}${printedFrac(f.n, f.d)}</span>`;
+      }
+      function printedFrac(n, d) {
+        return `<span class="frac"><b>${n}</b><i></i><b>${d}</b></span>`;
+      }
+      function liveFrac(nk, dk) {
+        return `<span class="frac">${slot(nk)}<i></i>${slot(dk)}</span>`;
+      }
+      function slot(key) {
+        const q = state.q;
+        const on = q.focus === key;
+        const bad = q.bad && q.bad[key];
+        const text = q.box[key] || "";
+        return `<span class="slotbox${on ? " on" : ""}${bad ? " bad" : ""}" data-slot="${key}">${text}</span>`;
+      }
+      function ghostPair() {
+        return `<span class="frac ghost"><b class="ph"></b><i></i><b class="ph"></b></span>`;
+      }
+      function shown(text) {
+        return `<span class="numbox">${text}</span>`;
+      }
+      function spacer() {
+        return `<span class="numbox"></span>`;
+      }
+      function blankNum() {
+        return `<span class="numbox ph"></span>`;
+      }
+      function fracOf(top, bot, side) {
+        return `<span class="frac ${side}">${top}<i></i>${bot}</span>`;
+      }
+      function termOf(q, side, wholeHTML, top, bot) {
+        const w = side === "L" ? q.a.w : q.b.w;
+        const mixed = q.a.w > 0 || q.b.w > 0;
+        return { whole: mixed && w ? wholeHTML : "", frac: fracOf(top, bot, side) };
+      }
+      function pack(q, tag, cls, left, right, wait, rowCls) {
+        const mixed = q.a.w > 0 || q.b.w > 0;
+        const L = left || { whole: "", frac: "" };
+        const R = right || { whole: "", frac: "" };
+        const op = right ? `<span class="op">${q.op === "+" ? "+" : "−"}</span>` : "";
+        let inner = `<div class="wtag${cls ? " " + cls : ""}">${tag}</div><div class="weq">${tag ? "＝" : ""}</div>`;
+        if (mixed) inner += `<div class="wcell W">${L.whole}</div>`;
+        inner += `<div class="wcell L">${L.frac}</div><div class="wcell opcell">${op}</div>`;
+        if (mixed) inner += `<div class="wcell W">${R.whole}</div>`;
+        inner += `<div class="wcell R">${R.frac}</div>`;
+        return `<div class="wrow${wait ? " wait" : ""}${rowCls ? " " + rowCls : ""}">${inner}</div>`;
+      }
+      function questionRow(q) {
+        const left = termOf(q, "L", shown(q.a.w), shown(q.a.n), shown(q.a.d));
+        const right = termOf(q, "R", shown(q.b.w), shown(q.b.n), shown(q.b.d));
+        return pack(q, "", "", left, right, false, "qrow");
+      }
+      function tongOpen(q, key) {
+        return !(q.fixed && q.fixed[key]);
+      }
+      function tongSide(q, side, wk, dk, nk) {
+        const s = q.sol;
+        const w = side === "L" ? q.a.w : q.b.w;
+        const n = side === "L" ? s.an : s.bn;
+        const cell = (key) => tongOpen(q, key) ? slot(key) : shown(q.box[key] || "");
+        if (q.phase === "whole") return termOf(q, side, w > 0 ? cell(wk) : "", blankNum(), cell(dk));
+        const past = q.phase !== "div" && q.phase !== "den" && q.phase !== "exp";
+        const densDone = past || q.phase === "exp";
+        const wholeHTML = (past || q.phase === "exp") && w > 0 ? shown(w) : blankNum();
+        const top = q.phase === "exp" ? cell(nk) : densDone ? shown(n) : blankNum();
+        const bot = q.phase === "den" ? cell(dk) : densDone ? shown(s.L) : blankNum();
+        return termOf(q, side, wholeHTML, top, bot);
+      }
+      function tongRow(q) {
+        const left = tongSide(q, "L", "wa", "ad", "an");
+        const right = tongSide(q, "R", "wb", "bd", "bn");
+        return pack(q, "通分", "", left, right, q.phase === "div", "tong");
+      }
+      function borrowRow(q) {
+        if (!q.sol.needBorrow) return "";
+        const s = q.sol;
+        const early = q.phase === "div" || q.phase === "whole" || q.phase === "den" || q.phase === "exp";
+        if (early) {
+          const left = termOf(q, "L", blankNum(), blankNum(), blankNum());
+          const right = termOf(q, "R", blankNum(), blankNum(), blankNum());
+          return pack(q, "退位", "br", left, right, true, "borrow");
+        }
+        const live = q.phase === "borrow";
+        const open = (key) => !(q.fixed && q.fixed[key]);
+        const cell = (key) => open(key) ? slot(key) : shown(q.box[key] || "");
+        const left = live
+          ? termOf(q, "L", cell("bw"), cell("bnum"), cell("bden"))
+          : termOf(q, "L", shown(s.brW), shown(s.brN), shown(s.L));
+        const right = termOf(q, "R", shown(q.b.w), shown(s.bn), shown(s.L));
+        return pack(q, "退位", "br", left, right, false, "borrow");
+      }
+      function resultTerm(q, wholeHTML, top, bot) {
+        const mixed = q.a.w > 0 || q.b.w > 0;
+        return { whole: mixed && calcWhole(q) ? wholeHTML : "", frac: fracOf(top, bot, "L") };
+      }
+      function sumRow(q) {
+        const wait = q.phase === "div" || q.phase === "whole" || q.phase === "den" || q.phase === "exp" || q.phase === "borrow";
+        let left = resultTerm(q, blankNum(), blankNum(), blankNum());
+        if (q.phase === "calc") {
+          const open = (key) => !(q.fixed && q.fixed[key]);
+          left = resultTerm(q, open("cw") ? slot("cw") : shown(q.box.cw || ""), open("cn") ? slot("cn") : shown(q.box.cn || ""), open("cd") ? slot("cd") : shown(q.box.cd || ""));
+        }
+        else if (q.phase === "carry") {
+          const s = q.sol;
+          left = resultTerm(q, s.rawW ? shown(s.rawW) : spacer(), shown(s.rawN), shown(s.rawD));
+        }
+        return pack(q, stepLabel(q), "go", left, null, wait, "sum");
+      }
+      function carryRow(q) {
+        if (!q.sol.carry) return "";
+        const mixed = q.a.w > 0 || q.b.w > 0;
+        if (q.phase !== "carry") {
+          const left = mixed
+            ? resultTerm(q, blankNum(), blankNum(), blankNum())
+            : { whole: "", frac: `<span class="mix"><span class="numbox ph"></span>${fracOf(blankNum(), blankNum(), "L")}</span>` };
+          return pack(q, "進位", "go", left, null, true, "carry");
+        }
+        const open = (key) => !(q.fixed && q.fixed[key]);
+        const cell = (key) => open(key) ? slot(key) : shown(q.box[key] || "");
+        const left = mixed
+          ? resultTerm(q, cell("fw"), cell("fn"), cell("fd"))
+          : { whole: "", frac: `<span class="mix">${cell("fw")}${fracOf(cell("fn"), cell("fd"), "L")}</span>` };
+        return pack(q, "進位", "go", left, null, false, "carry");
+      }
+      function fieldsOf(q) {
+        const fixed = q.fixed || {};
+        if (q.phase === "whole") {
+          const keys = [];
+          if (q.a.w > 0 && !fixed.wa) keys.push("wa");
+          if (!fixed.ad) keys.push("ad");
+          if (q.b.w > 0 && !fixed.wb) keys.push("wb");
+          if (!fixed.bd) keys.push("bd");
+          return keys;
+        }
+        if (q.phase === "den") return ["ad", "bd"].filter((k) => !fixed[k]);
+        if (q.phase === "exp") return ["an", "bn"].filter((k) => !fixed[k]);
+        if (q.phase === "borrow") return ["bw", "bden", "bnum"].filter((k) => !fixed[k]);
+        if (q.phase === "calc") {
+          const keys = [];
+          const fixed = q.fixed || {};
+          if (calcWhole(q) && !fixed.cw) keys.push("cw");
+          if (!fixed.cd) keys.push("cd");
+          if (!fixed.cn) keys.push("cn");
+          return keys;
+        }
+        if (q.phase === "carry") return ["fw", "fd", "fn"].filter((k) => !fixed[k]);
+        return [];
+      }
+      function calcWhole(q) {
+        return q.a.w > 0 || q.b.w > 0 || q.sol.rawW > 0;
+      }
+      function enter(q, phase) {
+        q.phase = phase;
+        q.bad = {};
+        q.fixed = {};
+        q.entry = "";
+        q.focus = fieldsOf(q)[0] || "";
+        q.replace = "";
+        setHint(phase === "whole" ? "請填整數" : phase === "den" ? "請填分母" : phase === "exp" ? "請填分子" : phase === "borrow" ? "請退 1" : phase === "calc" ? "請" + stepLabel(q) + (mustSimp(q) ? "，再約分" : "") : "請進 1");
+      }
+      function freshQuestion() {
+        const item = takeItem();
+        state.q = makeQ(item);
+        state.qStart = Date.now();
+        if (settleDiv(state.q)) enterTong(state.q);
+        else setHint("請填除數");
+        renderAll();
+      }
+      function succeed() {
+        if (state.ended) return;
+        const sec = Math.max(1, Math.round((Date.now() - state.qStart) / 1000));
+        state.qTimes.push(sec);
+        state.done += 1;
+        state.qIndex += 1;
+        sfx("ok");
+        freshQuestion();
+      }
+      function shakeEl(el) {
+        if (!el) return;
+        el.classList.remove("shake");
+        void el.offsetWidth;
+        el.classList.add("shake");
+      }
+      function miss(key, msg) {
+        if (state.ended || state.busy) return;
+        state.miss[key] += 1;
+        setHint(msg);
+        sfx("bad");
+        const bads = document.querySelectorAll(".slotbox.bad");
+        if (bads.length) bads.forEach(shakeEl);
+        else shakeEl(document.querySelector(".slotbox.on") || document.querySelector(".lshape") || document.querySelector(".stack"));
+        applyPenalty();
+      }
+      function fail(q, keyName, msg, badKeys) {
+        q.bad = {};
+        badKeys.forEach((k) => { q.bad[k] = true; });
+        const first = badKeys.find((k) => fieldsOf(q).indexOf(k) >= 0);
+        if (first) {
+          q.focus = first;
+          q.replace = q.box[first] ? first : "";
+        }
+        renderAll();
+        miss(keyName, msg);
+      }
+      function commitDivisor() {
+        const q = state.q;
+        if (!q || q.phase !== "div" || state.busy || state.ended) return;
+        if (!q.entry) { setHint("請填除數"); return; }
+        const d = Number(q.entry);
+        const cur = q.rows[q.rows.length - 1];
+        const step = splitRow(cur, d);
+        const hit = step.copies.filter((c) => !c).length;
+        if (!(d >= 2) || hit < 2) {
+          q.entry = "";
+          renderAll();
+          miss("div", "除數要整除這兩個數");
+          return;
+        }
+        q.divs.push(d);
+        q.rows.push(step.next);
+        q.anim = { from: q.rows.length - 2, copies: step.copies };
+        q.entry = "";
+        state.busy = true;
+        if (settleDiv(q)) enterTong(q);
+        else setHint("請填除數");
+        renderAll();
+        clearTimeout(animTimer);
+        animTimer = setTimeout(() => {
+          const go = state.q && state.q.pendingOk;
+          if (state.q) {
+            state.q.anim = null;
+            state.q.pendingOk = false;
+          }
+          state.busy = false;
+          renderAll();
+          if (go) onKey("ok");
+        }, 560);
+      }
+      function finishDiv() {
+        const q = state.q;
+        if (!q || q.phase !== "div" || state.busy || state.ended) return;
+        if (q.entry) { setHint("請先按確定"); return; }
+        const bottom = q.rows[q.rows.length - 1];
+        if (shares(bottom)) { miss("open", "短除未完成"); return; }
+        q.lcm = workProduct(q.divs, bottom);
+        q.phase = "lcm";
+        q.entry = "";
+        setHint("請填最小公倍數");
+        renderAll();
+      }
+      function commitLcm() {
+        const q = state.q;
+        if (!q || q.phase !== "lcm" || state.ended) return;
+        if (!q.entry) { setHint("請填最小公倍數"); return; }
+        if (Number(q.entry) !== q.lcm) {
+          q.lcmTries += 1;
+          const msg = q.lcmTries >= 2 ? "請再計算 " + factorExpr(q) : "請再計算";
+          q.entry = "";
+          renderAll();
+          miss("lcm", msg);
+          return;
+        }
+        enterTong(q);
+        renderAll();
+      }
+      function enterTong(q) {
+        enter(q, q.a.w > 0 || q.b.w > 0 ? "whole" : "den");
+      }
+      function commit() {
+        const q = state.q;
+        if (!q || state.ended) return;
+        const keys = fieldsOf(q);
+        if (keys.some((k) => q.box[k] == null || q.box[k] === "")) {
+          setHint(emptyHint(q));
+          return;
+        }
+        if (q.phase === "whole") { commitWhole(q); return; }
+        if (q.phase === "den") { commitDen(q); return; }
+        if (q.phase === "exp") { commitExp(q); return; }
+        if (q.phase === "borrow") { commitBorrow(q); return; }
+        if (q.phase === "calc") { commitCalc(q); return; }
+        gradeFinal(q, true, "fw", "fn", "fd", true);
+      }
+      function markTong(q, badW, badD, badN) {
+        const seq = q.phase === "den" ? ["ad", "bd"] : q.phase === "exp" ? ["an", "bn"] : ["wa", "ad", "wb", "bd"];
+        const bad = badW.concat(badD, badN);
+        const order = seq.filter((k) => bad.indexOf(k) >= 0);
+        const fixed = {};
+        if (q.phase === "whole") {
+          if (q.a.w > 0 && badW.indexOf("wa") < 0) fixed.wa = true;
+          if (badD.indexOf("ad") < 0) fixed.ad = true;
+          if (q.b.w > 0 && badW.indexOf("wb") < 0) fixed.wb = true;
+          if (badD.indexOf("bd") < 0) fixed.bd = true;
+        } else if (q.phase === "den") {
+          if (badD.indexOf("ad") < 0) fixed.ad = true;
+          if (badD.indexOf("bd") < 0) fixed.bd = true;
+        } else {
+          if (badN.indexOf("an") < 0) fixed.an = true;
+          if (badN.indexOf("bn") < 0) fixed.bn = true;
+        }
+        q.fixed = fixed;
+        const primary = badW.length ? "whole" : badD.length ? "den" : "num";
+        const cats = (badW.length ? 1 : 0) + (badD.length ? 1 : 0) + (badN.length ? 1 : 0);
+        const short = primary === "whole" ? "請再填整數" : primary === "den" ? "請填最小公倍數" : "請再通分";
+        const bits = [];
+        if (badW.length) bits.push(wrongWholes(q, badW));
+        if (badD.length) bits.push(factorExpr(q));
+        if (badN.length) bits.push(expandExpr(q, badN));
+        const extra = cats === 1 ? bits[0] : bits.filter(Boolean).join("，");
+        const triesKey = cats === 1 ? primary : "tong" + (badW.length ? "w" : "") + (badD.length ? "d" : "") + (badN.length ? "n" : "");
+        fail(q, primary, retryHint(q, triesKey, short, extra), order);
+        if (badW.length && primary !== "whole") state.miss.whole += 1;
+        if (badD.length && primary !== "den") state.miss.den += 1;
+        if (badN.length && primary !== "num") state.miss.num += 1;
+      }
+      function commitWhole(q) {
+        const badW = [];
+        if (q.a.w > 0 && Number(q.box.wa) !== q.a.w) badW.push("wa");
+        if (q.b.w > 0 && Number(q.box.wb) !== q.b.w) badW.push("wb");
+        const L = q.sol.L;
+        const badD = [];
+        if (Number(q.box.ad) !== L) badD.push("ad");
+        if (Number(q.box.bd) !== L) badD.push("bd");
+        if (badW.length || badD.length) { markTong(q, badW, badD, []); return; }
+        enter(q, "exp");
+        renderAll();
+      }
+      function commitDen(q) {
+        const L = q.sol.L;
+        const badD = [];
+        if (Number(q.box.ad) !== L) badD.push("ad");
+        if (Number(q.box.bd) !== L) badD.push("bd");
+        if (badD.length) { markTong(q, [], badD, []); return; }
+        enter(q, "exp");
+        renderAll();
+      }
+      function fieldHint(key) {
+        if (key === "wa" || key === "wb") return "請填整數";
+        if (key === "ad" || key === "bd") return "請填分母";
+        if (key === "an" || key === "bn") return "請填分子";
+        return "";
+      }
+      function emptyHint(q) {
+        if (q.phase === "whole" || q.phase === "den" || q.phase === "exp") {
+          const key = fieldsOf(q).find((k) => q.box[k] == null || q.box[k] === "");
+          if (key === "wa" || key === "wb") return "請填整數";
+          if (key === "ad" || key === "bd") return "請填分母";
+          return "請填分子";
+        }
+        if (q.phase === "borrow") {
+          if (!q.box.bw) return "請填整數";
+          if (!q.box.bden) return "請填分母";
+          return "請填分子";
+        }
+        if (q.phase === "carry") {
+          if (!q.box.fw) return "請填整數";
+          if (!q.box.fd) return "請填分母";
+          return "請填分子";
+        }
+        if (q.phase === "calc") {
+          if (calcWhole(q) && !q.box.cw) return "請填整數";
+          if (!q.box.cd) return "請填分母";
+          return "請填分子";
+        }
+        if (q.phase !== "exp") return "請" + stepLabel(q);
+        return "請填分子";
+      }
+      function commitExp(q) {
+        const s = q.sol;
+        const badN = [];
+        if (Number(q.box.an) !== s.an) badN.push("an");
+        if (Number(q.box.bn) !== s.bn) badN.push("bn");
+        if (badN.length) { markTong(q, [], [], badN); return; }
+        if (s.needBorrow) enter(q, "borrow");
+        else enter(q, "calc");
+        renderAll();
+      }
+      function markBorrow(q, badW, badD, badN) {
+        const order = ["bw", "bden", "bnum"].filter((k) => badW.concat(badD, badN).indexOf(k) >= 0);
+        q.fixed = { bw: !badW.length, bden: !badD.length, bnum: !badN.length };
+        const s = q.sol;
+        const onlyW = badW.length && !badD.length && !badN.length;
+        const onlyD = badD.length && !badW.length && !badN.length;
+        const onlyN = badN.length && !badW.length && !badD.length;
+        let keyName, triesKey, short, extra;
+        if (onlyW) { keyName = "br"; triesKey = "brw"; short = "請退 1"; extra = q.a.w + "−1"; }
+        else if (onlyD) { keyName = "den"; triesKey = "den"; short = "請填最小公倍數"; extra = factorExpr(q); }
+        else if (onlyN) { keyName = "br"; triesKey = "brn"; short = "請加上分母"; extra = s.an + "+" + s.L; }
+        else {
+          keyName = badD.length && !badW.length && !badN.length ? "den" : (badW.length || badN.length ? "br" : "den");
+          triesKey = "borrow" + (badW.length ? "w" : "") + (badD.length ? "d" : "") + (badN.length ? "n" : "");
+          short = badW.length ? "請退 1" : badD.length ? "請填最小公倍數" : "請加上分母";
+          const bits = [];
+          if (badW.length) bits.push(q.a.w + "−1");
+          if (badD.length) bits.push(factorExpr(q));
+          if (badN.length) bits.push(s.an + "+" + s.L);
+          extra = bits.join("，");
+        }
+        fail(q, keyName, retryHint(q, triesKey, short, extra), order);
+        if ((badW.length || badN.length) && keyName !== "br") state.miss.br += 1;
+        if (badD.length && keyName !== "den") state.miss.den += 1;
+      }
+      function commitBorrow(q) {
+        const s = q.sol;
+        const badW = Number(q.box.bw) !== s.brW ? ["bw"] : [];
+        const badD = Number(q.box.bden) !== s.L ? ["bden"] : [];
+        const badN = Number(q.box.bnum) !== s.brN ? ["bnum"] : [];
+        if (badW.length || badD.length || badN.length) { markBorrow(q, badW, badD, badN); return; }
+        enter(q, "calc");
+        renderAll();
+      }
+      function mustSimp(q) {
+        const s = q.sol;
+        return !s.carry && s.finD > 0 && s.finD < s.L;
+      }
+      function rawSimp(q) {
+        const s = q.sol;
+        const g = s.L / s.finD;
+        return { g: g, top: s.finN * g, den: s.L };
+      }
+      function markCalc(q, bad) {
+        const order = ["cw", "cd", "cn"].filter((k) => bad.indexOf(k) >= 0);
+        q.fixed = {
+          cw: calcWhole(q) && order.indexOf("cw") < 0,
+          cd: order.indexOf("cd") < 0,
+          cn: order.indexOf("cn") < 0
+        };
+        const extras = [];
+        if (order.indexOf("cw") >= 0) extras.push(sumWholeExpr(q));
+        if (order.indexOf("cn") >= 0) extras.push(fracExpr(q, false));
+        if (order.indexOf("cd") >= 0) extras.push("分母 " + factorExpr(q));
+        const wholeBad = order.indexOf("cw") >= 0;
+        const numBad = order.indexOf("cn") >= 0;
+        if (mustSimp(q) && numBad && !wholeBad && Number(q.box.cn) === rawSimp(q).top) {
+          const raw = rawSimp(q);
+          const extra = order.indexOf("cd") >= 0 ? raw.top + "÷" + raw.g + "、" + raw.den + "÷" + raw.g : raw.top + "÷" + raw.g;
+          fail(q, "simp", retryHint(q, "simp", "請約至最簡", extra), order);
+          return;
+        }
+        const keyName = wholeBad ? "whole" : "add";
+        const triesKey = wholeBad && order.length === 1 ? "cwhole" : (wholeBad ? "calc" : "add");
+        let short = "請再" + stepLabel(q);
+        let extra = extras.join("，");
+        if (mustSimp(q)) {
+          const raw = rawSimp(q);
+          short += "，再約分";
+          const simpBit = order.indexOf("cd") >= 0 ? raw.top + "÷" + raw.g + "、" + raw.den + "÷" + raw.g : raw.top + "÷" + raw.g;
+          extra = extra ? extra + "，" + simpBit : simpBit;
+        }
+        fail(q, keyName, retryHint(q, triesKey, short, extra), order);
+        if (wholeBad && order.length > 1) state.miss.add += 1;
+      }
+      function markCarry(q, badW, badN, badD) {
+        const order = ["fw", "fd", "fn"].filter((k) => badW.concat(badD, badN).indexOf(k) >= 0);
+        q.fixed = { fw: !badW.length, fd: !badD.length, fn: !badN.length };
+        const s = q.sol;
+        const onlyW = badW.length && !badN.length && !badD.length;
+        const onlyN = badN.length && !badW.length && !badD.length;
+        const onlyD = badD.length && !badW.length && !badN.length;
+        let keyName, triesKey, short, extra;
+        if (onlyW) { keyName = "carry"; triesKey = "carry"; short = "請進 1"; extra = carryExpr(q); }
+        else if (onlyN) { keyName = "add"; triesKey = "cnum"; short = "請減去分母"; extra = s.rawN + "−" + s.rawD; }
+        else if (onlyD) { keyName = "add"; triesKey = "cden"; short = "請填分母"; extra = String(s.finD); }
+        else {
+          keyName = badW.length ? "carry" : "add";
+          triesKey = "carryx" + (badW.length ? "w" : "") + (badD.length ? "d" : "") + (badN.length ? "n" : "");
+          short = badW.length ? "請進 1" : badN.length ? "請減去分母" : "請填分母";
+          const bits = [];
+          if (badW.length) bits.push(carryExpr(q));
+          if (badN.length) bits.push(s.rawN + "−" + s.rawD);
+          if (badD.length) bits.push(String(s.finD));
+          extra = bits.join("，");
+        }
+        fail(q, keyName, retryHint(q, triesKey, short, extra), order);
+        if (badW.length && (badN.length || badD.length)) state.miss.add += 1;
+      }
+      function commitCalc(q) {
+        if (q.sol.carry) {
+          const s = q.sol;
+          const bad = [];
+          if (calcWhole(q) && Number(q.box.cw) !== s.rawW) bad.push("cw");
+          if (Number(q.box.cn) !== s.rawN) bad.push("cn");
+          if (Number(q.box.cd) !== s.rawD) bad.push("cd");
+          if (!bad.length) { enter(q, "carry"); renderAll(); return; }
+          markCalc(q, bad);
+          return;
+        }
+        gradeFinal(q, calcWhole(q), "cw", "cn", "cd", false);
+      }
+      function gradeFinal(q, wholeOn, wk, nk, dk, isCarry) {
+        const s = q.sol;
+        const w = wholeOn ? Number(q.box[wk]) : 0;
+        const n = Number(q.box[nk]);
+        const d = Number(q.box[dk]);
+        const expW = isCarry ? s.finW : s.rawW;
+        const expN = isCarry ? s.finN : s.rawN;
+        const expD = isCarry ? s.finD : s.rawD;
+        const exact = (!wholeOn || Number(q.box[wk]) === expW) && n === expN && d === expD;
+        if (exact) { succeed(); return; }
+        const wholeBad = wholeOn && Number(q.box[wk]) !== expW;
+        const valueOk = d > 0 && Number.isFinite(n) && Math.abs((wholeOn ? w : 0) + n / d - (expW + expN / expD)) < 1e-9;
+        if (valueOk) {
+          const g = gcd(Math.abs(n), Math.abs(d));
+          const extra = g > 1 ? n + "÷" + g + "、" + d + "÷" + g : "";
+          if (wholeOn && !wholeBad) q.fixed = isCarry ? { fw: true, fd: false, fn: false } : { cw: true, cd: false, cn: false };
+          fail(q, "simp", retryHint(q, "simp", "請約至最簡", extra), [nk, dk]);
+          return;
+        }
+        if (isCarry) {
+          markCarry(q, wholeBad ? [wk] : [], n !== expN ? [nk] : [], d !== expD ? [dk] : []);
+          return;
+        }
+        const bad = [];
+        if (wholeBad) bad.push(wk);
+        if (n !== expN) bad.push(nk);
+        if (d !== expD) bad.push(dk);
+        markCalc(q, bad.length ? bad : [nk]);
+      }
+      function focusSlot(q, key) {
+        if (!q || !key || fieldsOf(q).indexOf(key) < 0) return;
+        q.focus = key;
+        q.replace = q.box[key] ? key : "";
+        if (q.phase === "whole") setHint(fieldHint(key));
+        renderAll();
+      }
+      function arrowSlot(q, keyName) {
+        const f = q.focus;
+        const live = (k) => k && fieldsOf(q).indexOf(k) >= 0;
+        const whole = { an: "wa", ad: "wa", bn: "wb", bd: "wb", cn: "cw", cd: "cw", fn: "fw", fd: "fw", bnum: "bw", bden: "bw" };
+        const above = { ad: "an", bd: "bn", cd: "cn", fd: "fn", bden: "bnum" };
+        const below = { an: "ad", bn: "bd", cn: "cd", fn: "fd", bnum: "bden", wa: "ad", wb: "bd", cw: "cd", fw: "fd", bw: "bden" };
+        if (keyName === "ArrowUp") {
+          if (live(above[f])) return above[f];
+          if (live(whole[f]) && whole[f] !== f) return whole[f];
+        }
+        if (keyName === "ArrowDown" && live(below[f])) return below[f];
+        if (keyName === "ArrowLeft") {
+          const side = { an: "wa", cn: "cw", fn: "fw", bnum: "bw" };
+          if (live(side[f])) return side[f];
+        }
+        return "";
+      }
+      function onKey(k) {
+        const q = state.q;
+        if (!q || state.ended) return;
+        if (q.phase === "div" || q.phase === "lcm") {
+          if (state.busy) {
+            if (k === "ok") q.pendingOk = true;
+            else if (k === "del") q.entry = q.entry.slice(0, -1);
+            else if (k >= "0" && k <= "9" && q.entry.length < 2) q.entry += k;
+            renderAll();
+            return;
+          }
+          if (k === "del") q.entry = q.entry.slice(0, -1);
+          else if (k === "ok") {
+            if (q.phase === "div") commitDivisor();
+            else commitLcm();
+            return;
+          } else if (k >= "0" && k <= "9" && q.entry.length < 2) q.entry += k;
+          else return;
+          renderAll();
+          return;
+        }
+        if (state.busy) return;
+        const key = q.focus;
+        if (!key) return;
+        if (k === "next" || k === "move" || k === "prev") {
+          const keys = fieldsOf(q);
+          const i = keys.indexOf(q.focus);
+          const j = i + (k === "prev" ? -1 : 1);
+          if (i >= 0 && j >= 0 && j < keys.length) {
+            q.focus = keys[j];
+            q.replace = q.box[q.focus] ? q.focus : "";
+            if (q.phase === "whole") setHint(fieldHint(q.focus));
+            renderAll();
+            return;
+          }
+          if (k === "next") commit();
+          return;
+        }
+        if (k === "ok") { commit(); return; }
+        let cur = q.box[key] || "";
+        const fresh = q.replace === key || (q.bad && q.bad[key]);
+        if (k === "del") {
+          q.replace = "";
+          if (!cur) {
+            const back = arrowSlot(q, "ArrowLeft");
+            if (back) { focusSlot(q, back); return; }
+            onKey("prev");
+            return;
+          }
+          cur = cur.slice(0, -1);
+        } else if (k >= "0" && k <= "9") {
+          if (fresh) cur = "";
+          q.replace = "";
+          if (cur.length < 2) cur += k;
+          else return;
+        } else return;
+        q.box[key] = cur;
+        if (q.bad) q.bad[key] = false;
+        renderAll();
+      }
+
+      function startGame() {
+        const classId = keepCode($("classId").value);
+        const studentId = keepCode($("studentId").value);
+        if (!classId || !studentId) { bounce($("startBtn")); return; }
+        unlockAudio();
+        state.classId = classId; state.studentId = studentId;
+        state.qIndex = 1; state.done = 0; state.qTimes = [];
+        state.miss = blankMiss();
+        state.ended = false; state.busy = false; state.sheetSent = false;
+        $("reportModal").classList.remove("show");
+        ensureStudent();
+        showScreen("game");
+        startCountdown();
+        freshQuestion();
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"'`]/g, (c) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;"
+        }[c]));
+      }
+      function cmpStudent(a, b) {
+        if (a.classId !== b.classId) return String(a.classId).localeCompare(String(b.classId), "zh-Hant");
+        const na = parseInt(a.studentId, 10), nb = parseInt(b.studentId, 10);
+        if (!Number.isNaN(na) && !Number.isNaN(nb) && na !== nb) return na - nb;
+        return String(a.studentId).localeCompare(String(b.studentId), "zh-Hant", { numeric: true });
+      }
+      function timeDay(t) {
+        const s = String(t || "");
+        const m = s.match(/^\d{4}\/\d{2}\/\d{2}/);
+        return m ? m[0] : (s || "（空白）");
+      }
+      function colValue(key, e) {
+        if (key === "student") return `${e.classId} ${e.studentId}`.trim() || "（空白）";
+        if (key === "score") return String(e.done);
+        if (key === "avg") return e.avgSec ? String(e.avgSec) : "—";
+        if (key === "diagnosis") return e.diagnosis || "（空白）";
+        return timeDay(e.time);
+      }
+      function classLogs() {
+        if (!dashClass || dashClass === "ALL") return dashAllLogs;
+        return dashAllLogs.filter((e) => e.classId === dashClass);
+      }
+      function uniqueValues(key) {
+        const set = new Set();
+        classLogs().forEach((e) => set.add(colValue(key, e)));
+        const arr = [...set];
+        const spec = DASH_COLS.find((c) => c.key === key);
+        arr.sort((a, b) => {
+          if (spec && spec.numeric) {
+            const na = Number(a), nb = Number(b);
+            const fa = Number.isFinite(na), fb = Number.isFinite(nb);
+            if (fa && fb) return na - nb;
+            if (fa) return -1;
+            if (fb) return 1;
+          }
+          return String(a).localeCompare(String(b), "zh-Hant", { numeric: true });
+        });
+        return arr;
+      }
+      function filterActive(key) {
+        const sel = dashFilters[key];
+        return !!(sel && sel.size < uniqueValues(key).length);
+      }
+      function anyFilterOn() { return DASH_COLS.some((c) => filterActive(c.key)); }
+      function passesFilters(e) {
+        return DASH_COLS.every((col) => {
+          const sel = dashFilters[col.key];
+          if (!sel) return true;
+          return sel.has(colValue(col.key, e));
+        });
+      }
+      function sortLogs(logs) {
+        const col = dashSort.col;
+        const m = dashSort.dir === "asc" ? 1 : -1;
+        return logs.slice().sort((a, b) => {
+          let c = 0;
+          if (col === "score") c = a.done - b.done;
+          else if (col === "avg") c = (a.avgSec || 0) - (b.avgSec || 0);
+          else if (col === "student") c = cmpStudent(a, b);
+          else if (col === "time") c = String(a.time || "").localeCompare(String(b.time || ""));
+          else if (col === "diagnosis") c = String(a.diagnosis || "").localeCompare(String(b.diagnosis || ""), "zh-Hant");
+          return (c * m) || cmpStudent(a, b);
+        });
+      }
+      function sortMark(key) {
+        if (dashSort.col !== key) return "";
+        return dashSort.dir === "asc" ? " ▲" : " ▼";
+      }
+      function closeFilterMenu() {
+        dashMenuCol = "";
+        const menu = $("dashFilterMenu");
+        if (menu) menu.classList.remove("show");
+      }
+      function errorItems(e) {
+        const text = String(e.diagnosis || "");
+        const items = [];
+        const re = /([^•\n；]+?)（(\d+)次）/g;
+        let m;
+        while ((m = re.exec(text))) {
+          let label = m[1].replace(/^[\s•]+/, "").trim();
+          if (!label || label === "零失誤") continue;
+          const head = label.split("：")[0].trim();
+          if (head) label = head;
+          const n = Number(m[2]) || 0;
+          if (n) items.push([label, n]);
+        }
+        return items;
+      }
+      function studentKeyOf(e) { return `${e.classId}__${e.studentId}`; }
+      function errorTotal(e) { return errorItems(e).reduce((n, it) => n + (it[1] || 0), 0); }
+      function isRealAttempt(e) { return (e.done || 0) > 0 || errorTotal(e) > 0; }
+      function latestReal(logs) {
+        const by = new Map();
+        (logs || []).forEach((e, i) => {
+          if (!isRealAttempt(e)) return;
+          const key = studentKeyOf(e);
+          const prev = by.get(key);
+          const stamp = String(e.time || "");
+          if (!prev || stamp > prev.stamp || (stamp === prev.stamp && i >= prev.i)) by.set(key, { e, stamp, i });
+        });
+        return [...by.values()].map((x) => x.e);
+      }
+      function formatAvg(n) { return String(Math.round(n * 10) / 10); }
+      function bestScore(logs) {
+        const by = new Map();
+        (logs || []).forEach((e) => {
+          if (!isRealAttempt(e)) return;
+          const key = studentKeyOf(e);
+          const prev = by.get(key);
+          if (!prev || (e.done || 0) > (prev.done || 0)) by.set(key, e);
+        });
+        return [...by.values()];
+      }
+      function topMisses(logs) {
+        const counts = new Map();
+        (logs || []).forEach((e) => {
+          errorItems(e).forEach(([label, n]) => {
+            if (!label || !n || label === "零失誤") return;
+            counts.set(label, (counts.get(label) || 0) + n);
+          });
+        });
+        return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "zh")).slice(0, 3);
+      }
+      function topMissHtml(logs) {
+        const top = topMisses(logs);
+        if (!top.length) return "零失誤";
+        return top.map(([label, n]) => `• ${escapeHtml(label)}（${n}次）`).join("<br>");
+      }
+      function dashCardsHtml(logs) {
+        const scored = bestScore(logs);
+        const recent = latestReal(logs);
+        const doneText = scored.length ? formatAvg(scored.reduce((n, e) => n + (e.done || 0), 0) / scored.length) : "—";
+        const errText = recent.length ? formatAvg(recent.reduce((n, e) => n + errorTotal(e), 0) / recent.length) : "—";
+        const missText = recent.length ? topMissHtml(recent) : "—";
+        return `
+          <div class="stat s1"><b>平均 6 分鐘完成題數</b><strong>${doneText}</strong></div>
+          <div class="stat s2"><b>平均錯處次數</b><strong>${errText}</strong></div>
+          <div class="stat s3 errs"><b>三大主要錯處</b><div class="miss3">${missText}</div></div>`;
+      }
+      function paintDash() {
+        DASH_COLS.forEach((col) => {
+          const sel = dashFilters[col.key];
+          if (!sel) return;
+          const all = new Set(uniqueValues(col.key));
+          const next = new Set([...sel].filter((v) => all.has(v)));
+          dashFilters[col.key] = next.size === all.size ? null : next;
+        });
+        const sourceEl = $("dashSource");
+        const base = classLogs();
+        const logs = base.filter(passesFilters);
+        const classes = [...new Set(dashAllLogs.map((s) => s.classId).filter(Boolean))].sort();
+        $("classFilter").innerHTML = `<option value="ALL">全部班別</option>` +
+          classes.map((c) => `<option value="${escapeHtml(c)}" ${c === dashClass ? "selected" : ""}>${escapeHtml(c)}</option>`).join("");
+        $("analysisCards").innerHTML = dashCardsHtml(logs);
+        if ($("dashCount")) $("dashCount").textContent = dashAllLogs.length ? `顯示 ${logs.length} / ${base.length} 筆` : "";
+        if ($("clearFiltersBtn")) $("clearFiltersBtn").style.visibility = anyFilterOn() ? "visible" : "hidden";
+        if (!dashAllLogs.length) {
+          $("studentRecords").innerHTML = `<div class="empty">${sourceEl && sourceEl.textContent.indexOf("未能") >= 0 ? "未能連線 Google 試算表" : "未有紀錄"}</div>`;
+          return;
+        }
+        const ranked = sortLogs(logs);
+        const scores = ranked.map((e) => e.done || 0).slice().sort((a, b) => a - b);
+        const hiCut = scores.length ? scores[Math.max(0, scores.length - Math.ceil(scores.length * 0.2))] || 0 : 0;
+        const loCut = scores.length ? scores[Math.min(scores.length - 1, Math.floor(scores.length * 0.2))] || 0 : 0;
+        const showRank = dashSort.col === "score";
+        const head = (key, extra) => {
+          const spec = DASH_COLS.find((c) => c.key === key);
+          const on = filterActive(key);
+          const sorted = dashSort.col === key ? " sorted" : "";
+          return `<th class="col-h${extra || ""}${sorted}" data-col="${key}">
+            <button type="button" class="col-sort" data-sort="${key}">${escapeHtml(spec.label)}${sortMark(key)}</button>
+            <button type="button" class="filter-btn${on ? " on" : ""}" data-filter="${key}" aria-label="篩選${escapeHtml(spec.label)}">▼</button>
+          </th>`;
+        };
+        const body = ranked.length ? ranked.map((e, i) => {
+          const rank = dashSort.dir === "asc" ? ranked.length - i : i + 1;
+          const hi = e.done >= hiCut && e.done > 0;
+          const lo = e.done <= loCut;
+          return `<tr class="${hi ? "hi" : lo ? "lo" : ""}">
+            ${showRank ? `<td class="rank-cell">${rank}</td>` : ""}
+            <td>${escapeHtml(e.classId)} ${escapeHtml(e.studentId)}</td>
+            <td class="score-cell">${e.done}</td>
+            <td>${e.avgSec || "—"}</td>
+            <td class="diag-cell">${escapeHtml(e.diagnosis)}</td>
+            <td>${escapeHtml(e.time)}</td>
+          </tr>`;
+        }).join("") : `<tr><td colspan="${showRank ? 6 : 5}" class="empty">此篩選沒有紀錄，可再按 ▼ 更改篩選</td></tr>`;
+        $("studentRecords").innerHTML = `<table>
+          <thead><tr>
+            ${showRank ? `<th class="score-h">名次</th>` : ""}
+            ${head("student")}${head("score", " score-h")}${head("avg")}${head("diagnosis")}${head("time")}
+          </tr></thead><tbody>${body}</tbody></table>`;
+      }
+      function placeFilterMenu(anchor) {
+        const menu = $("dashFilterMenu");
+        const r = anchor.getBoundingClientRect();
+        menu.classList.add("show");
+        const w = menu.offsetWidth || 260;
+        const h = menu.offsetHeight || 280;
+        let left = Math.min(r.left, window.innerWidth - w - 8);
+        let top = r.bottom + 4;
+        if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 4);
+        if (left < 8) left = 8;
+        menu.style.left = left + "px";
+        menu.style.top = top + "px";
+      }
+      function renderFilterMenu(key, q) {
+        const spec = DASH_COLS.find((c) => c.key === key);
+        if (!spec) return;
+        const values = uniqueValues(key);
+        const sel = dashFilters[key];
+        const query = String(q || "").trim();
+        const shown = query ? values.filter((v) => String(v).indexOf(query) !== -1) : values;
+        const allOn = !sel;
+        const sortDesc = key === "time" ? "新 → 舊" : (spec.numeric ? "由高到低" : "由 Z 到 A");
+        const sortAsc = key === "time" ? "舊 → 新" : (spec.numeric ? "由低到高" : "由 A 到 Z");
+        $("dashFilterMenu").innerHTML = `
+          <div class="fm-title">篩選：${escapeHtml(spec.label)}</div>
+          <div class="fm-acts">
+            <button type="button" data-fm="sort-desc">${sortDesc}</button>
+            <button type="button" data-fm="sort-asc">${sortAsc}</button>
+          </div>
+          <input type="search" id="fmSearch" placeholder="搜尋" value="${escapeHtml(query)}" />
+          <div class="fm-acts">
+            <button type="button" data-fm="all">全選</button>
+            <button type="button" data-fm="none">全不選</button>
+            <button type="button" data-fm="clear">清除此欄</button>
+          </div>
+          <div class="opts">
+            ${shown.map((v) => {
+              const on = allOn || sel.has(v);
+              const idx = values.indexOf(v);
+              return `<label><input type="checkbox" data-idx="${idx}" ${on ? "checked" : ""} />${escapeHtml(v)}</label>`;
+            }).join("") || `<div class="empty">沒有項目</div>`}
+          </div>`;
+        const search = $("fmSearch");
+        if (search) {
+          search.focus();
+          const n = search.value.length;
+          try { search.setSelectionRange(n, n); } catch (err) {}
+        }
+      }
+      function openFilterMenu(key, anchor) {
+        dashMenuCol = key;
+        renderFilterMenu(key, "");
+        placeFilterMenu(anchor);
+      }
+      function setColFilter(key, nextSet) {
+        const all = uniqueValues(key);
+        if (!nextSet || nextSet.size === all.length) dashFilters[key] = null;
+        else dashFilters[key] = nextSet;
+        paintDash();
+        if (dashMenuCol === key) {
+          const query = ($("fmSearch") && $("fmSearch").value) || "";
+          renderFilterMenu(key, query);
+          const btn = document.querySelector(`.filter-btn[data-filter="${key}"]`);
+          if (btn) placeFilterMenu(btn);
+        }
+      }
+      function bestPerStudent(logs) {
+        const map = new Map();
+        (logs || []).forEach((e) => {
+          if (!e.studentId && !e.classId) return;
+          const key = studentKey(e.classId, e.studentId);
+          const prev = map.get(key);
+          const better = !prev
+            || (e.done || 0) > (prev.done || 0)
+            || ((e.done || 0) === (prev.done || 0) && (e.avgSec || 99999) < (prev.avgSec || 99999));
+          if (better) map.set(key, e);
+        });
+        return [...map.values()]
+          .filter((e) => (e.done || 0) > 0)
+          .sort((a, b) => {
+            if ((b.done || 0) !== (a.done || 0)) return (b.done || 0) - (a.done || 0);
+            const ta = a.avgSec || 99999, tb = b.avgSec || 99999;
+            if (ta !== tb) return ta - tb;
+            return cmpStudent(a, b);
+          })
+          .slice(0, 10);
+      }
+      async function renderRank(force) {
+        const seq = ++rankSeq;
+        const boxEl = $("rankRecords");
+        if (!boxEl) return;
+        boxEl.innerHTML = `<div class="empty">載入排行榜…</div>`;
+        let logs = [];
+        let fail = false;
+        try { logs = await loadSheetLogs(!!force); }
+        catch (err) { fail = true; }
+        if (seq !== rankSeq) return;
+        if (fail) { boxEl.innerHTML = `<div class="empty">未能連線</div>`; return; }
+        const top = bestPerStudent(logs);
+        if (!top.length) { boxEl.innerHTML = `<div class="empty">未有紀錄</div>`; return; }
+        const ranks = [];
+        top.forEach((e, i) => {
+          ranks.push(i > 0 && (e.done || 0) === (top[i - 1].done || 0) ? ranks[i - 1] : i + 1);
+        });
+        boxEl.innerHTML = `<table>
+          <thead><tr><th class="score-h">名次</th><th>班別學號</th><th class="score-h">答對題數</th></tr></thead>
+          <tbody>${top.map((e, i) => {
+            const n = ranks[i];
+            const cls = n === 1 ? "r1" : n === 2 ? "r2" : n === 3 ? "r3" : "";
+            return `<tr class="${cls}"><td class="rank-cell">${n}</td><td>${escapeHtml(e.classId)} ${escapeHtml(e.studentId)}</td><td class="score-cell">${e.done || 0}</td></tr>`;
+          }).join("")}</tbody></table>`;
+      }
+      async function renderDashboard(filterClass, force) {
+        const seq = ++dashSeq;
+        if (filterClass) dashClass = filterClass;
+        $("studentRecords").innerHTML = `<div class="empty">載入全班分數…</div>`;
+        $("analysisCards").innerHTML = `
+          <div class="stat s1"><b>平均 6 分鐘完成題數</b><strong>…</strong></div>
+          <div class="stat s2"><b>平均錯處次數</b><strong>…</strong></div>
+          <div class="stat s3 errs"><b>三大主要錯處</b><div class="miss3">…</div></div>`;
+        let source = "";
+        try { dashAllLogs = await loadSheetLogs(!!force, dashPin); source = "Google 試算表"; }
+        catch (err) { dashAllLogs = loadStore().logs; source = "本機（未能連線試算表）"; }
+        if (seq !== dashSeq) return;
+        if ($("dashSource")) $("dashSource").textContent = source;
+        paintDash();
+      }
+
+      const confetti = $("confetti");
+      const cfx = confetti.getContext("2d");
+      let pieces = [];
+      function resizeConfetti() { confetti.width = window.innerWidth; confetti.height = window.innerHeight; }
+      function burstConfetti(count) {
+        const colors = ["#ff7eb6", "#5cc8ff", "#ffe066", "#c9b6ff", "#7eecc8"];
+        for (let i = 0; i < count; i++) {
+          pieces.push({
+            x: confetti.width * (0.2 + Math.random() * 0.6), y: -12,
+            r: 4 + Math.random() * 6, c: colors[i % colors.length],
+            vx: -3 + Math.random() * 6, vy: 3 + Math.random() * 5,
+            rot: Math.random() * 360, vr: -8 + Math.random() * 16,
+            life: 80 + Math.random() * 40, shape: i % 3
+          });
+        }
+      }
+      (function tick() {
+        cfx.clearRect(0, 0, confetti.width, confetti.height);
+        pieces = pieces.filter((p) => p.life > 0);
+        pieces.forEach((p) => {
+          p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.rot += p.vr; p.life -= 1;
+          cfx.save(); cfx.translate(p.x, p.y); cfx.rotate(p.rot * Math.PI / 180);
+          cfx.globalAlpha = Math.max(0, p.life / 70); cfx.fillStyle = p.c;
+          if (p.shape === 0) cfx.fillRect(-p.r, -p.r / 2, p.r * 2, p.r);
+          else if (p.shape === 1) { cfx.beginPath(); cfx.arc(0, 0, p.r, 0, Math.PI * 2); cfx.fill(); }
+          else { cfx.beginPath(); cfx.moveTo(0, -p.r); cfx.lineTo(p.r, p.r); cfx.lineTo(-p.r, p.r); cfx.fill(); }
+          cfx.restore();
+        });
+        requestAnimationFrame(tick);
+      })();
+      resizeConfetti();
+      window.addEventListener("resize", resizeConfetti);
+
+      $("startBtn").addEventListener("click", startGame);
+      $("classId").addEventListener("keydown", (e) => { if (e.key === "Enter") $("studentId").focus(); });
+      $("studentId").addEventListener("keydown", (e) => { if (e.key === "Enter") startGame(); });
+      function bindCode(el) {
+        el.addEventListener("input", () => {
+          const next = keepCode(el.value);
+          if (next !== el.value) el.value = next;
+        });
+      }
+      bindCode($("classId"));
+      bindCode($("studentId"));
+      $("rankBtn").addEventListener("click", () => { showScreen("rank"); renderRank(true); });
+      $("rankBackBtn").addEventListener("click", () => showScreen("login"));
+      $("rankRefreshBtn").addEventListener("click", () => renderRank(true));
+      $("teacherBtn").addEventListener("click", () => {
+        $("pinModal").classList.add("show");
+        $("pinInput").value = "";
+        $("pinInput").focus();
+      });
+      $("pinCancel").addEventListener("click", () => $("pinModal").classList.remove("show"));
+            $("pinOk").addEventListener("click", async () => {
+        const typed = $("pinInput").value;
+        const btn = $("pinOk");
+        const reject = () => {
+          dashPin = "";
+          bounce($("pinInput"));
+          $("pinInput").classList.add("shake");
+          setTimeout(() => $("pinInput").classList.remove("shake"), 400);
+          $("pinInput").value = "";
+        };
+        if (!typed || btn.disabled) { reject(); return; }
+        btn.disabled = true;
+        let opened = false;
+        try {
+          await loadSheetLogs(true, typed);
+          dashPin = typed;
+          opened = true;
+        } catch (err) {
+          dashPin = "";
+        }
+        btn.disabled = false;
+        if (!opened) { reject(); return; }
+          $("pinModal").classList.remove("show");
+          dashFilters = {}; dashSort = { col: "student", dir: "asc" }; dashClass = "ALL"; closeFilterMenu();
+          showScreen("dash");
+          renderDashboard("ALL");
+      });
+      $("pinInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("pinOk").click(); });
+      $("dashBackBtn").addEventListener("click", () => { closeFilterMenu(); showScreen("login"); });
+      $("backLoginBtn").addEventListener("click", () => {
+        if (!state.ended && realAttempt()) { endSession(); return; }
+        stopCountdown();
+        $("studentId").value = "";
+        $("reportModal").classList.remove("show");
+        showScreen("login");
+        $("studentId").focus();
+      });
+      $("reportBackBtn").addEventListener("click", () => {
+        $("reportModal").classList.remove("show");
+        $("studentId").value = "";
+        showScreen("login");
+        $("studentId").focus();
+      });
+      $("printBtn").addEventListener("click", () => window.print());
+      $("classFilter").addEventListener("change", (e) => { dashClass = e.target.value || "ALL"; closeFilterMenu(); paintDash(); });
+      $("clearFiltersBtn").addEventListener("click", () => { dashFilters = {}; closeFilterMenu(); paintDash(); });
+      $("studentRecords").addEventListener("click", (e) => {
+        const fb = e.target.closest(".filter-btn");
+        if (fb) {
+          e.stopPropagation();
+          const key = fb.getAttribute("data-filter");
+          if (dashMenuCol === key && $("dashFilterMenu").classList.contains("show")) closeFilterMenu();
+          else openFilterMenu(key, fb);
+          return;
+        }
+        const sb = e.target.closest(".col-sort");
+        if (!sb) return;
+        const key = sb.getAttribute("data-sort");
+        if (dashSort.col === key) dashSort.dir = dashSort.dir === "desc" ? "asc" : "desc";
+        else dashSort = { col: key, dir: (key === "student" || key === "diagnosis") ? "asc" : "desc" };
+        paintDash();
+      });
+      $("dashFilterMenu").addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-fm]");
+        if (!btn || !dashMenuCol) return;
+        const act = btn.getAttribute("data-fm");
+        const key = dashMenuCol;
+        if (act === "sort-desc") { dashSort = { col: key, dir: "desc" }; paintDash(); }
+        else if (act === "sort-asc") { dashSort = { col: key, dir: "asc" }; paintDash(); }
+        else if (act === "all" || act === "clear") setColFilter(key, null);
+        else if (act === "none") setColFilter(key, new Set());
+        if (act === "sort-desc" || act === "sort-asc") {
+          const anchor = document.querySelector(`.filter-btn[data-filter="${key}"]`);
+          if (anchor) placeFilterMenu(anchor);
+        }
+      });
+      $("dashFilterMenu").addEventListener("change", (e) => {
+        const inp = e.target;
+        if (!inp.matches || !inp.matches("input[type='checkbox'][data-idx]")) return;
+        const key = dashMenuCol;
+        const values = uniqueValues(key);
+        const val = values[Number(inp.getAttribute("data-idx"))];
+        if (val == null) return;
+        const sel = dashFilters[key] ? new Set(dashFilters[key]) : new Set(values);
+        if (inp.checked) sel.add(val); else sel.delete(val);
+        setColFilter(key, sel);
+      });
+      $("dashFilterMenu").addEventListener("input", (e) => {
+        if (e.target.id !== "fmSearch" || !dashMenuCol) return;
+        renderFilterMenu(dashMenuCol, e.target.value);
+        const btn = document.querySelector(`.filter-btn[data-filter="${dashMenuCol}"]`);
+        if (btn) placeFilterMenu(btn);
+      });
+      document.addEventListener("click", (e) => {
+        const menu = $("dashFilterMenu");
+        if (!menu || !menu.classList.contains("show")) return;
+        if (menu.contains(e.target) || e.target.closest(".filter-btn")) return;
+        closeFilterMenu();
+      });
+      $("refreshDashBtn").addEventListener("click", () => renderDashboard($("classFilter").value || "ALL", true));
+      $("dock").addEventListener("click", (e) => {
+        const keyBtn = e.target.closest("[data-key]");
+        if (keyBtn) {
+          const k = keyBtn.getAttribute("data-key");
+          const q = state.q;
+          if (k === "ok" && q && q.phase !== "div" && q.phase !== "lcm") onKey("next");
+          else onKey(k);
+          return;
+        }
+        if (e.target.closest("[data-done]")) finishDiv();
+      });
+      function slotFromEvent(q, e) {
+        const direct = e.target.closest("[data-slot]");
+        if (direct && fieldsOf(q).indexOf(direct.getAttribute("data-slot")) >= 0) return direct.getAttribute("data-slot");
+        const frac = e.target.closest(".frac");
+        if (frac) {
+          const slots = [...frac.querySelectorAll("[data-slot]")].filter((el) => fieldsOf(q).indexOf(el.getAttribute("data-slot")) >= 0);
+          if (slots.length) {
+            const y = e.clientY;
+            slots.sort((a, b) => {
+              const mid = (el) => { const r = el.getBoundingClientRect(); return (r.top + r.bottom) / 2; };
+              return Math.abs(mid(a) - y) - Math.abs(mid(b) - y);
+            });
+            return slots[0].getAttribute("data-slot");
+          }
+        }
+        const cell = e.target.closest(".wcell");
+        if (cell) {
+          const one = [...cell.querySelectorAll("[data-slot]")].find((el) => fieldsOf(q).indexOf(el.getAttribute("data-slot")) >= 0);
+          if (one) return one.getAttribute("data-slot");
+        }
+        return "";
+      }
+      $("stage").addEventListener("click", (e) => {
+        const q = state.q;
+        if (!q || state.ended || state.busy) return;
+        const key = slotFromEvent(q, e);
+        if (!key) return;
+        focusSlot(q, key);
+      });
+      document.addEventListener("keydown", (e) => {
+        if (!screens.game.classList.contains("active")) return;
+        const tag = (e.target && e.target.tagName) || "";
+        if (tag === "INPUT" || tag === "TEXTAREA") return;
+        if (e.key >= "0" && e.key <= "9") onKey(e.key);
+        else if (e.key === "Backspace") { e.preventDefault(); onKey("del"); }
+        else if (e.key === "ArrowLeft" || e.key === "ArrowUp" || e.key === "ArrowRight" || e.key === "ArrowDown") {
+          e.preventDefault();
+          const q = state.q;
+          const dest = q && arrowSlot(q, e.key);
+          if (dest) focusSlot(q, dest);
+          else if (e.key === "ArrowLeft" || e.key === "ArrowUp") onKey("prev");
+          else onKey("move");
+        }
+        else if (e.key === "Enter" || e.key === "NumpadEnter" || e.code === "NumpadEnter") {
+          e.preventDefault();
+          const q = state.q;
+          if (e.shiftKey) onKey("prev");
+          else if (q && (q.phase === "div" || q.phase === "lcm")) onKey("ok");
+          else onKey("next");
+        }
+      });
+      function type(text) { String(text).split("").forEach((ch) => onKey(ch)); }
+      function settleAnim() {
+        clearTimeout(animTimer);
+        if (state.q) { state.q.anim = null; state.q.pendingOk = false; }
+        state.busy = false;
+        renderAll();
+      }
+      function put(key, text) {
+        state.q.focus = key;
+        state.q.box[key] = "";
+        type(text);
+      }
+      function selfCheck() {
+        const problems = [];
+        state.orderFixed = true;
+        tierBags = [[], [], [], []];
+        function expectSol(item, sol) {
+          const tag = item.op + item.a.w + item.a.n + "/" + item.a.d;
+          if (sol.L <= 0 || sol.finD <= 0 || sol.rawD <= 0) problems.push("den:" + tag);
+          if (sol.carry && sol.finN >= sol.finD) problems.push("carry:" + tag);
+          if (!sol.carry && sol.rawN >= sol.rawD) problems.push("improper:" + tag);
+          if (sol.needBorrow && !(sol.brN > sol.bn)) problems.push("borrow:" + tag);
+          if (gcd(sol.finN, sol.finD) !== 1) problems.push("simp:" + tag);
+        }
+        BANK.forEach((item) => expectSol(item, solve(item.a, item.b, item.op)));
+        state.classId = "5A";
+        state.studentId = "01";
+        state.done = 0;
+        state.qTimes = [];
+        state.qIndex = 1;
+        state.miss = blankMiss();
+        state.ended = false;
+        state.busy = false;
+        state.remain = 360;
+        showScreen("game");
+        freshQuestion();
+        if (state.q.phase !== "div" || $("hintBar").textContent !== "請填除數" || !document.querySelector(".lshape")) problems.push("div0");
+        const cell = document.querySelector(".dcell .slotbox");
+        if (cell) {
+          const cs = getComputedStyle(cell);
+          const radius = parseFloat(cs.borderTopLeftRadius);
+          const height = parseFloat(cs.height);
+          const width = parseFloat(cs.width);
+          if (!(width > height) || radius > height * 0.34) problems.push("shape:" + Math.round(width) + "x" + Math.round(height) + "r" + radius);
+          if (cs.maxWidth === "none" || Math.abs(parseFloat(cs.maxWidth) - width) > 1) problems.push("grow:" + Math.round(width) + "/" + cs.maxWidth);
+          if (cs.overflow === "hidden" || parseFloat(cs.paddingLeft) < 4) problems.push("pad:" + cs.paddingLeft + ":" + cs.overflow);
+        } else problems.push("no-slot");
+        onKey("ok");
+        if (state.miss.div || state.remain !== 360 || $("hintBar").textContent !== "請填除數") problems.push("blank");
+        if (GAME_SECS !== 360 || String(dashCardsHtml).indexOf("平均 6 分鐘完成題數") < 0 || String(endSession).indexOf("6 分鐘內答對") < 0) problems.push("clock6");
+        if ($("timer").textContent.indexOf("06:00") < 0) problems.push("clock:" + $("timer").textContent);
+        type("1"); onKey("ok");
+        if (state.miss.div !== 1 || $("hintBar").textContent !== "除數要整除這兩個數" || state.remain !== 355) problems.push("bad-div:" + state.miss.div + ":" + $("hintBar").textContent);
+        type("3"); onKey("ok");
+        settleAnim();
+        if (state.q.phase !== "den" || state.q.lcm !== 18 || $("hintBar").textContent !== "請填分母") problems.push("to-den:" + state.q.phase + ":" + state.q.lcm + ":" + $("hintBar").textContent);
+        if ($("stage").textContent.indexOf("18") >= 0 || document.querySelector("[data-slot='an']")) problems.push("gave-den");
+        if ($("stage").textContent.indexOf("分母的最小公倍數") >= 0) problems.push("lcm-label");
+        function tagsOf() {
+          return [...document.querySelectorAll(".wtag")].map((el) => el.textContent).filter(Boolean);
+        }
+        function eqsOf() {
+          return [...document.querySelectorAll(".weq")].filter((el) => el.textContent === "＝");
+        }
+        function midX(sel) {
+          const el = document.querySelector(sel);
+          if (!el) { problems.push("miss:" + sel); return 0; }
+          const r = el.getBoundingClientRect();
+          return (r.left + r.right) / 2;
+        }
+        function align(a, b, name) {
+          const d = Math.abs(midX(a) - midX(b));
+          if (d > 2) problems.push(name + ":" + Math.round(d));
+        }
+        const eqs = eqsOf();
+        if (eqs.length < 2) problems.push("eqs:" + eqs.length);
+        else if (Math.abs(eqs[0].getBoundingClientRect().left - eqs[1].getBoundingClientRect().left) > 1) problems.push("eqalign");
+        const tagBox = [...document.querySelectorAll(".wtag")].find((el) => el.textContent).getBoundingClientRect();
+        const eqBox = eqs[0].getBoundingClientRect();
+        if (tagBox.right > eqBox.left + 2) problems.push("tagleft");
+        const lbox = document.querySelector(".lshape").getBoundingClientRect();
+        const stageBox = document.querySelector(".stage").getBoundingClientRect();
+        const qL = document.querySelector(".qrow .frac.L").getBoundingClientRect();
+        const qR = document.querySelector(".qrow .frac.R").getBoundingClientRect();
+        if (lbox.right < stageBox.right - 28 || lbox.left < qR.right - 2) problems.push("right:" + Math.round(lbox.left) + ":" + Math.round(qR.right) + ":" + Math.round(stageBox.right));
+        if (qL.top - stageBox.top > 56) problems.push("qtop:" + Math.round(qL.top - stageBox.top));
+        align(".qrow .frac.L", ".tong .frac.L", "alignL");
+        align(".qrow .frac.R", ".tong .frac.R", "alignR");
+        align(".qrow .frac.L", ".sum .frac.L", "alignSum");
+        const slotW = document.querySelector(".tong .slotbox").getBoundingClientRect().width;
+        const numW = document.querySelector(".qrow .numbox").getBoundingClientRect().width;
+        if (Math.abs(slotW - numW) > 1) problems.push("size:" + Math.round(slotW) + "/" + Math.round(numW));
+        const frame = getComputedStyle(document.querySelector(".lshape"));
+        if (frame.backgroundColor === "rgb(255, 255, 255)" || frame.boxShadow !== "none") problems.push("frame");
+        const tags = tagsOf();
+        if (tags[0] !== "通分" || tags[1] !== "相加" || tags.length !== 2) problems.push("tag:" + tags.join("/"));
+        onKey("ok");
+        if (state.miss.den || $("hintBar").textContent !== "請填分母") problems.push("blank-den:" + state.miss.den);
+        type("4");
+        if (state.q.focus !== "ad" || state.q.box.ad !== "4") problems.push("jump:" + state.q.focus + ":" + state.q.box.ad);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "bd" || state.q.phase !== "den" || state.q.box.ad !== "4") problems.push("den-next:" + state.q.focus + ":" + state.q.phase + ":" + state.q.box.ad);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "ad" || state.q.box.ad !== "4") problems.push("prev:" + state.q.focus + ":" + state.q.box.ad);
+        type("9");
+        if (state.q.box.ad !== "9" || state.q.focus !== "ad") problems.push("retype:" + state.q.box.ad);
+        type("1");
+        if (state.q.box.ad !== "91") problems.push("retype2:" + state.q.box.ad);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true, cancelable: true }));
+        type("4");
+        if (state.q.box.ad !== "4" || state.q.focus !== "ad") problems.push("retype3:" + state.q.box.ad);
+        document.querySelector("[data-key='ok']").click();
+        if (state.q.focus !== "bd" || state.q.box.ad !== "4") problems.push("btn-next:" + state.q.focus + ":" + state.q.box.ad);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "bd") problems.push("arr-next:" + state.q.focus);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", shiftKey: true, bubbles: true, cancelable: true }));
+        if (state.q.focus !== "ad") problems.push("shift-prev:" + state.q.focus);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "bd" || state.q.box.ad !== "4") problems.push("re-next:" + state.q.focus);
+        onKey("del");
+        if (state.q.focus !== "ad" || state.q.box.ad !== "4") problems.push("bs-prev:" + state.q.focus + ":" + state.q.box.ad);
+        put("ad", "12"); put("bd", "12"); onKey("ok");
+        if (state.miss.den !== 1 || state.q.phase !== "den" || $("hintBar").textContent !== "請填最小公倍數") problems.push("den:" + state.miss.den + ":" + state.q.phase + ":" + $("hintBar").textContent);
+        type("1");
+        if (state.q.box.ad !== "1" || state.q.bad.ad) problems.push("replace:" + state.q.box.ad);
+        put("ad", "12"); put("bd", "12"); onKey("ok");
+        if (state.miss.den !== 2 || $("hintBar").textContent !== "請填最小公倍數 3×3×2") problems.push("den2:" + $("hintBar").textContent);
+        put("ad", "18"); put("bd", "18");
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.phase !== "exp" || $("hintBar").textContent !== "請填分子" || document.querySelector("[data-slot='ad']")) problems.push("enter-den:" + state.q.phase + ":" + $("hintBar").textContent);
+        put("an", "5"); put("bn", "1"); onKey("ok");
+        if (state.miss.num !== 1 || $("hintBar").textContent !== "請再通分") problems.push("num1:" + $("hintBar").textContent);
+        put("an", "5"); put("bn", "1"); onKey("ok");
+        if (state.miss.num !== 2 || $("hintBar").textContent !== "請再通分 2×2、1×3") problems.push("num2:" + $("hintBar").textContent);
+        put("an", "4");
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "bn" || state.q.phase !== "exp" || state.q.box.an !== "4") problems.push("num-next:" + state.q.focus + ":" + state.q.phase + ":" + state.q.box.an);
+        const expSlot = document.querySelector("[data-slot='bn']").getBoundingClientRect().width;
+        const expNum = document.querySelector(".tong .numbox").getBoundingClientRect().width;
+        if (Math.abs(expSlot - expNum) > 1) problems.push("noshrink:" + Math.round(expSlot) + "/" + Math.round(expNum));
+        put("bn", "3");
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "NumpadEnter", code: "NumpadEnter", bubbles: true, cancelable: true }));
+        if (state.q.phase !== "calc" || state.q.focus !== "cd" || fieldsOf(state.q).join(",") !== "cd,cn" || $("hintBar").textContent !== "請相加") problems.push("to-calc:" + state.q.phase + ":" + state.q.focus + ":" + fieldsOf(state.q).join(",") + ":" + $("hintBar").textContent);
+        put("cn", "6"); put("cd", "18"); onKey("ok");
+        if (state.miss.add !== 1 || $("hintBar").textContent !== "請再相加") problems.push("add:" + state.miss.add + ":" + $("hintBar").textContent);
+        put("cn", "6"); put("cd", "18"); onKey("ok");
+        if (state.miss.add !== 2 || $("hintBar").textContent !== "請再相加 4+3") problems.push("add2:" + $("hintBar").textContent);
+        put("cn", "7"); put("cd", "18"); onKey("ok");
+        if (state.qIndex !== 2 || state.done !== 1 || state.q.phase !== "div") problems.push("q2:" + state.qIndex + ":" + state.done + ":" + state.q.phase);
+        type("2"); onKey("ok"); settleAnim();
+        if (state.q.phase !== "whole" || state.q.lcm !== 20) problems.push("q2den:" + state.q.phase + ":" + state.q.lcm);
+        const earlyC = tagsOf();
+        const carryWait = document.querySelectorAll(".wrow")[3];
+        if (earlyC.join("/") !== "通分/相加/進位" || !carryWait || !carryWait.classList.contains("wait")) problems.push("early-carry:" + earlyC.join("/"));
+        put("wa", "2"); put("ad", "20"); put("wb", "2"); put("bd", "20"); onKey("ok");
+        if (state.q.phase !== "exp" || fieldsOf(state.q).join(",") !== "an,bn" || $("hintBar").textContent !== "請填分子" || document.querySelector("[data-slot='wa']")) problems.push("q2exp:" + state.q.phase + ":" + fieldsOf(state.q).join(",") + ":" + $("hintBar").textContent);
+        put("an", "15"); put("bn", "14"); onKey("ok");
+        if (state.q.phase !== "calc" || fieldsOf(state.q).join(",") !== "cw,cd,cn") problems.push("q2calc:" + state.q.phase + ":" + fieldsOf(state.q).join(","));
+        put("cw", "4"); put("cn", "29"); put("cd", "20"); onKey("ok");
+        if (state.q.phase !== "carry" || state.q.focus !== "fw" || fieldsOf(state.q).join(",") !== "fw,fd,fn") problems.push("carry-show:" + state.q.phase + ":" + fieldsOf(state.q).join(","));
+        const ctags = tagsOf();
+        if (ctags.join("/") !== "通分/相加/進位" || $("stage").innerHTML.indexOf("進 1") >= 0 || $("stage").textContent.indexOf("→") >= 0) problems.push("carry-line:" + ctags.join("/"));
+        const ceqs = eqsOf();
+        if (ceqs.length !== 3 || Math.abs(ceqs[0].getBoundingClientRect().left - ceqs[2].getBoundingClientRect().left) > 1) problems.push("carry-eq");
+        put("fw", "4"); put("fn", "9"); put("fd", "20"); onKey("ok");
+        if (state.miss.carry !== 1 || $("hintBar").textContent !== "請進 1") problems.push("carry1:" + $("hintBar").textContent);
+        put("fw", "4"); put("fn", "9"); put("fd", "20"); onKey("ok");
+        if (state.miss.carry !== 2 || $("hintBar").textContent !== "請進 1 4+1") problems.push("carry2:" + $("hintBar").textContent);
+        put("fw", "5"); put("fn", "19"); put("fd", "20"); onKey("ok");
+        if (state.miss.add !== 3 || $("hintBar").textContent !== "請減去分母" || !state.q.bad.fn) problems.push("cnum:" + state.miss.add + ":" + $("hintBar").textContent);
+        put("fw", "5"); put("fn", "19"); put("fd", "20"); onKey("ok");
+        if ($("hintBar").textContent !== "請減去分母 29−20" || state.q.bad.fw) problems.push("cnum2:" + $("hintBar").textContent);
+        put("fw", "5"); put("fn", "9"); put("fd", "20"); onKey("ok");
+        if (state.done !== 2 || state.qIndex !== 3) problems.push("after-carry:" + state.done + ":" + state.qIndex);
+        type("2"); onKey("ok"); settleAnim();
+        if (state.q.phase !== "den") problems.push("q3den:" + state.q.phase);
+        put("ad", "30"); put("bd", "30"); onKey("ok");
+        put("an", "25"); put("bn", "9"); onKey("ok");
+        if (state.q.phase !== "calc" || $("hintBar").textContent !== "請相減，再約分") problems.push("simp-enter:" + state.q.phase + ":" + $("hintBar").textContent);
+        put("cn", "16"); put("cd", "30"); onKey("ok");
+        if (state.miss.simp !== 1 || $("hintBar").textContent !== "請約至最簡") problems.push("simp:" + state.miss.simp + ":" + $("hintBar").textContent);
+        put("cn", "16"); put("cd", "30"); onKey("ok");
+        if (state.miss.simp !== 2 || $("hintBar").textContent !== "請約至最簡 16÷2、30÷2") problems.push("simp2:" + $("hintBar").textContent);
+        put("cn", "8"); put("cd", "15"); onKey("ok");
+        if (state.done !== 3 || state.qIndex !== 4) problems.push("after-simp:" + state.done + ":" + state.qIndex);
+        if (state.q.phase !== "div" || state.q.sol.needBorrow !== true) problems.push("q4flag");
+        const earlyB = tagsOf();
+        const borrowWait = document.querySelectorAll(".wrow")[2];
+        if (earlyB.join("/") !== "通分/退位/相減" || !borrowWait || !borrowWait.classList.contains("wait")) problems.push("early-borrow:" + earlyB.join("/"));
+        type("4"); onKey("ok"); settleAnim();
+        if (state.q.phase !== "whole" || state.q.focus !== "wa" || fieldsOf(state.q).join(",") !== "wa,ad,wb,bd" || document.querySelector("[data-slot='an']")) problems.push("q4whole:" + state.q.phase + ":" + fieldsOf(state.q).join(","));
+        if (document.querySelector(".tong").textContent.indexOf("7") >= 0 || document.querySelectorAll(".lines .whole").length) problems.push("shown-whole");
+        onKey("ok");
+        if (state.q.phase !== "whole" || state.miss.whole || $("hintBar").textContent !== "請填整數") problems.push("blank-whole:" + state.q.phase + ":" + $("hintBar").textContent);
+        type("7");
+        if (state.q.focus !== "wa" || state.q.box.wa !== "7") problems.push("whole-jump:" + state.q.focus + ":" + state.q.box.wa);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "ad" || state.q.phase !== "whole" || state.q.box.wa !== "7" || $("hintBar").textContent !== "請填分母") problems.push("whole-next:" + state.q.focus + ":" + state.q.phase + ":" + $("hintBar").textContent);
+        const denAtBlank = state.miss.den;
+        onKey("ok");
+        if (state.q.phase !== "whole" || state.miss.den !== denAtBlank || $("hintBar").textContent !== "請填分母") problems.push("blank-den2:" + state.q.phase + ":" + $("hintBar").textContent);
+        const orderHint = { wb: "請填整數", bd: "請填分母" };
+        ["wb", "bd"].forEach((expect) => {
+          document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+          if (state.q.focus !== expect || state.q.phase !== "whole" || $("hintBar").textContent !== orderHint[expect]) problems.push("order:" + expect + ":" + state.q.focus + ":" + state.q.phase + ":" + $("hintBar").textContent);
+        });
+        align(".qrow .frac.L", ".tong .frac.L", "mixL");
+        align(".qrow .frac.R", ".tong .frac.R", "mixR");
+        align(".qrow .frac.L", ".borrow .frac.L", "mixBr");
+        align(".qrow .frac.L", ".sum .frac.L", "mixSum");
+        const qWholes = [...document.querySelectorAll(".qrow .wcell.W")];
+        const tWholes = [...document.querySelectorAll(".tong .wcell.W")];
+        if (qWholes.length !== 2 || tWholes.length !== 2) problems.push("wholes:" + qWholes.length + ":" + tWholes.length);
+        else {
+          const mid = (el) => { const r = el.getBoundingClientRect(); return (r.left + r.right) / 2; };
+          if (Math.abs(mid(qWholes[0]) - mid(tWholes[0])) > 2) problems.push("wholeL");
+          if (Math.abs(mid(qWholes[1]) - mid(tWholes[1])) > 2) problems.push("wholeR");
+        }
+        put("wa", "6"); put("ad", "24"); put("wb", "1"); put("bd", "24"); put("an", "9"); put("bn", "14"); onKey("ok");
+        if (state.miss.whole !== 1 || state.q.phase !== "whole" || $("hintBar").textContent !== "請再填整數") problems.push("bad-whole:" + state.miss.whole + ":" + $("hintBar").textContent);
+        put("wa", "6"); put("ad", "24"); put("wb", "1"); put("bd", "24"); put("an", "9"); put("bn", "14"); onKey("ok");
+        if (state.miss.whole !== 2 || $("hintBar").textContent !== "請再填整數 7") problems.push("whole2:" + $("hintBar").textContent);
+        const denBefore = state.miss.den;
+        put("wa", "7"); put("ad", "12"); put("wb", "1"); put("bd", "12"); put("an", "9"); put("bn", "14"); onKey("ok");
+        if (state.miss.den !== denBefore + 1 || state.q.phase !== "whole" || $("hintBar").textContent !== "請填最小公倍數" || document.querySelector("[data-slot='wa']") || !state.q.bad.ad || !state.q.bad.bd || state.q.bad.an) problems.push("q4den:" + state.q.phase + ":" + $("hintBar").textContent + ":" + fieldsOf(state.q).join(","));
+        put("wa", "7"); put("ad", "12"); put("wb", "1"); put("bd", "12"); put("an", "9"); put("bn", "14"); onKey("ok");
+        if (state.miss.den !== denBefore + 2 || $("hintBar").textContent !== "請填最小公倍數 4×2×3") problems.push("den-mix:" + $("hintBar").textContent);
+        align(".qrow .frac.L", ".tong .frac.L", "expL");
+        const numBefore = state.miss.num;
+        put("ad", "24"); put("bd", "24"); onKey("ok");
+        if (state.q.phase !== "exp" || $("hintBar").textContent !== "請填分子" || !document.querySelector("[data-slot='an']") || document.querySelector("[data-slot='wa']") || document.querySelector("[data-slot='ad']")) problems.push("mix-open-num:" + state.q.phase + ":" + $("hintBar").textContent);
+        put("an", "8"); put("bn", "14"); onKey("ok");
+        if (state.miss.num !== numBefore + 1 || state.q.phase !== "exp" || $("hintBar").textContent !== "請再通分" || !state.q.bad.an) problems.push("bad-num:" + state.miss.num + ":" + $("hintBar").textContent + ":" + state.q.phase);
+        put("an", "8"); put("bn", "14"); onKey("ok");
+        if (state.miss.num !== numBefore + 2 || $("hintBar").textContent !== "請再通分 3×3") problems.push("num3:" + $("hintBar").textContent);
+        put("an", "9"); onKey("ok");
+        if (document.querySelector(".tong").textContent.indexOf("7") < 0 || document.querySelector("[data-slot='wa']")) problems.push("tong-whole");
+        if (state.q.phase !== "borrow" || fieldsOf(state.q).join(",") !== "bw,bden,bnum" || state.q.focus !== "bw") problems.push("borrow-show:" + state.q.phase + ":" + fieldsOf(state.q).join(","));
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "bden" || state.q.phase !== "borrow") problems.push("br-next:" + state.q.focus + ":" + state.q.phase);
+        const btags = tagsOf();
+        if (btags.join("/") !== "通分/退位/相減" || document.querySelector(".struck") || $("stage").textContent.indexOf("→") >= 0) problems.push("borrow-tag:" + btags.join("/"));
+        const beqs = eqsOf();
+        if (beqs.length !== 3 || Math.abs(beqs[0].getBoundingClientRect().left - beqs[2].getBoundingClientRect().left) > 1) problems.push("borrow-eq");
+        put("bw", "6"); put("bden", "24"); put("bnum", "33"); onKey("ok");
+        if (state.q.phase !== "calc" || state.q.focus !== "cw" || fieldsOf(state.q).join(",") !== "cw,cd,cn" || $("hintBar").textContent !== "請相減") problems.push("after-br:" + state.q.phase + ":" + fieldsOf(state.q).join(",") + ":" + $("hintBar").textContent);
+        put("cw", "5"); put("cn", "19"); put("cd", "24"); onKey("ok");
+        if (state.done !== 4) problems.push("q4done:" + state.done);
+        state.orderFixed = true;
+        tierBags = [[], [], [], []];
+        const seen = [];
+        for (let n = 1; n <= 8; n++) {
+          state.qIndex = n;
+          freshQuestion();
+          const id = [state.q.op, state.q.a.w, state.q.a.n, state.q.a.d, state.q.b.w, state.q.b.n, state.q.b.d].join("/");
+          if (seen.indexOf(id) >= 0) problems.push("repeat:" + id);
+          seen.push(id);
+          if (!document.querySelector(".lshape") || gcd(state.q.a.d, state.q.b.d) === 1) problems.push("noladder:" + n);
+          const tier = (n - 1) % 4;
+          const proper = !state.q.a.w && !state.q.b.w;
+          if (tier === 0 && !(proper && state.q.op === "+" && !state.q.sol.carry)) problems.push("tier0:" + n);
+          if (tier === 1 && !(!proper && state.q.op === "+" && state.q.sol.carry)) problems.push("tier1:" + n);
+          if (tier === 2 && !(proper && state.q.op === "-" && state.q.sol.finD < state.q.sol.L)) problems.push("tier2:" + n);
+          if (tier === 3 && !(!proper && state.q.sol.needBorrow)) problems.push("tier3:" + n);
+        }
+        state.qIndex = 1;
+        freshQuestion();
+        const first = [state.q.a.n, state.q.a.d, state.q.b.n, state.q.b.d].join("/");
+        state.qIndex = 5;
+        freshQuestion();
+        const fifth = [state.q.a.n, state.q.a.d, state.q.b.n, state.q.b.d].join("/");
+        if (first === fifth) problems.push("same-again:" + first);
+        function tap(slot) {
+          const el = document.querySelector(`[data-slot='${slot}']`);
+          if (!el) { problems.push("noslot:" + slot); return ""; }
+          const r = el.getBoundingClientRect();
+          const x = r.left + r.width / 2;
+          const y = r.top + r.height / 2;
+          const top = document.elementFromPoint(x, y);
+          const hit = top && top.closest("[data-slot]");
+          const name = hit ? hit.getAttribute("data-slot") : (top ? top.className : "none");
+          if (name !== slot) problems.push("hit:" + slot + ":" + name);
+          el.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: x, clientY: y }));
+          return name;
+        }
+        function backType(from, to, oldText, digit, label) {
+          state.q.focus = from;
+          state.q.box[to] = oldText;
+          state.q.replace = "";
+          renderAll();
+          document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true, cancelable: true }));
+          if (state.q.focus !== to || state.q.replace !== to) problems.push(label + "-arm:" + state.q.focus + ":" + state.q.replace);
+          onKey(digit);
+          const shown = document.querySelector(`[data-slot='${to}']`);
+          const vis = shown ? shown.textContent : "";
+          if (state.q.box[to] !== digit || vis !== digit) problems.push(label + ":" + state.q.box[to] + "/" + vis);
+        }
+        state.orderFixed = true;
+        tierBags = [[], [], [], []];
+        state.qIndex = 2;
+        state.ended = false;
+        state.busy = false;
+        freshQuestion();
+        type("2"); onKey("ok"); settleAnim();
+        if (state.q.phase !== "whole") problems.push("mix-phase:" + state.q.phase);
+        type("2");
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true, cancelable: true }));
+        onKey("9");
+        if (state.q.box.wa !== "9" || state.q.focus !== "wa") problems.push("mix-wa:" + state.q.box.wa + ":" + state.q.focus);
+        backType("ad", "wa", "12", "8", "mix-wa2");
+        state.q.focus = "ad";
+        state.q.box.wa = "12";
+        state.q.replace = "";
+        renderAll();
+        tap("wa");
+        if (state.q.focus !== "wa" || state.q.replace !== "wa") problems.push("mix-click:" + state.q.focus + ":" + state.q.replace);
+        document.querySelector("[data-key='6']").click();
+        if (state.q.box.wa !== "6") problems.push("mix-keypad:" + state.q.box.wa);
+        backType("wb", "ad", "20", "4", "mix-ad");
+        state.q.focus = "wa";
+        state.q.box.wa = "12";
+        state.q.replace = "";
+        renderAll();
+        document.querySelector("[data-slot='wa']").click();
+        onKey("5");
+        if (state.q.box.wa !== "5") problems.push("reclick:" + state.q.box.wa);
+        state.q.box = { wa: "2", ad: "20", wb: "2", bd: "20" };
+        onKey("ok");
+        if (state.q.phase !== "exp" || fieldsOf(state.q).join(",") !== "an,bn" || document.querySelector("[data-slot='ad']")) problems.push("mix-exp:" + state.q.phase + ":" + fieldsOf(state.q).join(","));
+        backType("bn", "an", "15", "3", "mix-an");
+        state.q.box.an = "15";
+        state.q.box.bn = "14";
+        state.q.focus = "bn";
+        state.q.replace = "";
+        renderAll();
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "an" || state.q.replace !== "an") problems.push("num-back:" + state.q.focus + ":" + state.q.replace);
+        onKey("4");
+        if (state.q.box.an !== "4" || state.q.box.bn !== "14") problems.push("num-back-type:" + state.q.box.an + ":" + state.q.box.bn);
+        state.q.box.an = "15";
+        state.q.box.bn = "14";
+        onKey("ok");
+        if (state.q.phase !== "calc") problems.push("mix-calc:" + state.q.phase);
+        state.q.box.cw = "4";
+        state.q.box.cn = "29";
+        state.q.focus = "cn";
+        state.q.replace = "";
+        renderAll();
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "cw" || state.q.replace !== "cw") problems.push("calc-back:" + state.q.focus + ":" + state.q.replace);
+        onKey("8");
+        if (state.q.box.cw !== "8" || state.q.box.cn !== "29") problems.push("calc-back-type:" + state.q.box.cw);
+        backType("cd", "cw", "4", "7", "mix-cw");
+        state.q.box.cw = "4"; state.q.box.cn = "29"; state.q.box.cd = "20";
+        state.q.focus = "cn";
+        onKey("ok");
+        if (state.q.phase !== "carry") problems.push("mix-carry:" + state.q.phase);
+        state.q.box.fw = "5";
+        state.q.box.fn = "19";
+        state.q.focus = "fn";
+        state.q.replace = "";
+        renderAll();
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "fw" || state.q.replace !== "fw") problems.push("carry-back:" + state.q.focus + ":" + state.q.replace);
+        onKey("2");
+        if (state.q.box.fw !== "2" || state.q.box.fn !== "19") problems.push("carry-back-type:" + state.q.box.fw);
+        backType("fd", "fw", "5", "1", "mix-fw");
+        state.qIndex = 4;
+        freshQuestion();
+        type("4"); onKey("ok"); settleAnim();
+        state.q.box = { wa: "7", ad: "24", wb: "1", bd: "24", an: "9", bn: "14" };
+        onKey("ok");
+        if (state.q.phase === "exp") onKey("ok");
+        if (state.q.phase !== "borrow") problems.push("mix-br:" + state.q.phase);
+        backType("bden", "bw", "6", "8", "mix-bw");
+        state.orderFixed = true;
+        tierBags = [[], [], [], []];
+        state.qIndex = 2;
+        state.miss = blankMiss();
+        state.ended = false;
+        state.busy = false;
+        freshQuestion();
+        type("2"); onKey("ok"); settleAnim();
+        state.q.box = { wa: "2", ad: "20", wb: "2", bd: "20", an: "15", bn: "14" };
+        onKey("ok");
+        if (state.q.phase === "exp") onKey("ok");
+        if (state.q.phase !== "calc") problems.push("red-calc:" + state.q.phase);
+        state.q.box.cw = "3";
+        state.q.box.cn = "20";
+        state.q.box.cd = "20";
+        state.q.focus = "cn";
+        const remainBefore = state.remain;
+        onKey("ok");
+        const redOn = (key) => {
+          const el = document.querySelector(`[data-slot='${key}']`);
+          return !!(el && el.classList.contains("bad"));
+        };
+        if (!state.q.bad.cw || !state.q.bad.cn || state.q.bad.cd || fieldsOf(state.q).join(",") !== "cw,cn") problems.push("red-both:" + fieldsOf(state.q).join(",") + ":" + JSON.stringify(state.q.bad));
+        if (!redOn("cw") || !redOn("cn") || document.querySelector("[data-slot='cd']")) problems.push("red-lock");
+        if (state.q.focus !== "cw" || $("hintBar").textContent !== "請再相加") problems.push("red-focus:" + state.q.focus + ":" + $("hintBar").textContent);
+        if (state.miss.whole !== 1 || state.miss.add !== 1 || state.remain !== remainBefore - 5) problems.push("red-pen:" + state.miss.whole + ":" + state.miss.add + ":" + (remainBefore - state.remain));
+        onKey("4");
+        if (state.q.box.cw !== "4") problems.push("red-clear:" + state.q.box.cw);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "cn" || state.q.phase !== "calc") problems.push("red-next:" + state.q.focus + ":" + state.q.phase);
+        onKey("2");
+        if (state.q.box.cn !== "2") problems.push("red-num:" + state.q.box.cn);
+        onKey("9");
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.phase !== "carry" || state.q.box.cw !== "4" || state.q.box.cn !== "29") problems.push("red-carry:" + state.q.phase + ":" + state.q.box.cw + ":" + state.q.box.cn);
+        state.qIndex = 4;
+        state.miss = blankMiss();
+        freshQuestion();
+        type("4"); onKey("ok"); settleAnim();
+        state.q.box = { wa: "7", ad: "24", wb: "1", bd: "24", an: "9", bn: "14" };
+        onKey("ok");
+        if (state.q.phase === "exp") onKey("ok");
+        state.q.box.bw = "6";
+        state.q.box.bden = "24";
+        state.q.box.bnum = "33";
+        onKey("ok");
+        state.q.box.cw = "4";
+        state.q.box.cn = "10";
+        state.q.box.cd = "24";
+        onKey("ok");
+        if (state.q.phase !== "calc" || !state.q.bad.cw || !state.q.bad.cn || state.q.bad.cd || fieldsOf(state.q).join(",") !== "cw,cn" || $("hintBar").textContent !== "請再相減" || document.querySelector("[data-slot='cd']")) problems.push("sub-red:" + state.q.phase + ":" + fieldsOf(state.q).join(",") + ":" + $("hintBar").textContent);
+        state.orderFixed = true;
+        tierBags = [[], [], [], []];
+        state.qIndex = 1;
+        state.miss = blankMiss();
+        state.ended = false;
+        state.busy = false;
+        freshQuestion();
+        type("3"); onKey("ok"); settleAnim();
+        if (state.q.phase !== "den") problems.push("tong1-den:" + state.q.phase);
+        state.q.box = { ad: "18", bd: "12" };
+        state.q.focus = "bd";
+        const denRemain = state.remain;
+        onKey("ok");
+        const tongShown = (side) => [...document.querySelectorAll(".tong .frac." + side + " .numbox:not(.ph)")].map((el) => el.textContent).join(",");
+        if (state.q.phase !== "den" || !state.q.bad.bd || state.q.bad.ad || fieldsOf(state.q).join(",") !== "bd") problems.push("tong1-lock:" + fieldsOf(state.q).join(",") + ":" + JSON.stringify(state.q.bad));
+        if (!redOn("bd") || document.querySelector("[data-slot='ad']") || tongShown("L") !== "18") problems.push("tong1-red:" + tongShown("L"));
+        if (state.q.focus !== "bd" || $("hintBar").textContent !== "請填最小公倍數") problems.push("tong1-hint:" + state.q.focus + ":" + $("hintBar").textContent);
+        if (state.miss.den !== 1 || state.miss.num || state.remain !== denRemain - 5) problems.push("tong1-pen:" + state.miss.den + ":" + state.miss.num + ":" + (denRemain - state.remain));
+        onKey("1");
+        if (state.q.box.bd !== "1") problems.push("tong1-clear:" + state.q.box.bd);
+        onKey("8");
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.phase !== "exp" || fieldsOf(state.q).join(",") !== "an,bn" || $("hintBar").textContent !== "請填分子") problems.push("tong1-exp:" + state.q.phase + ":" + fieldsOf(state.q).join(",") + ":" + $("hintBar").textContent);
+        state.q.box.an = "4";
+        state.q.box.bn = "9";
+        state.q.focus = "bn";
+        onKey("ok");
+        if (state.q.phase !== "exp" || !state.q.bad.bn || state.q.bad.an || fieldsOf(state.q).join(",") !== "bn" || document.querySelector("[data-slot='an']") || document.querySelector("[data-slot='ad']") || tongShown("L") !== "4,18" || $("hintBar").textContent !== "請再通分") problems.push("tong1-num:" + fieldsOf(state.q).join(",") + ":" + tongShown("L") + ":" + $("hintBar").textContent);
+        onKey("3");
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.phase !== "calc" || state.q.box.bn !== "3") problems.push("tong1-calc:" + state.q.phase + ":" + state.q.box.bn);
+        tierBags = [[], [], [], []];
+        state.qIndex = 1;
+        state.miss = blankMiss();
+        freshQuestion();
+        type("3"); onKey("ok"); settleAnim();
+        state.q.box = { ad: "12", bd: "9" };
+        onKey("ok");
+        if (state.q.phase !== "den" || fieldsOf(state.q).join(",") !== "ad,bd" || !state.q.bad.ad || !state.q.bad.bd || !redOn("ad") || !redOn("bd")) problems.push("tong1-both:" + fieldsOf(state.q).join(","));
+        state.qIndex = 2;
+        state.miss = blankMiss();
+        freshQuestion();
+        type("2"); onKey("ok"); settleAnim();
+        state.q.box = { wa: "9", ad: "20", wb: "2", bd: "10" };
+        state.q.focus = "bd";
+        const mixRemain = state.remain;
+        onKey("ok");
+        if (state.q.phase !== "whole" || fieldsOf(state.q).join(",") !== "wa,bd") problems.push("tong2-fields:" + state.q.phase + ":" + fieldsOf(state.q).join(","));
+        if (!state.q.bad.wa || !state.q.bad.bd || state.q.bad.ad || state.q.bad.wb || state.q.bad.an || state.q.bad.bn) problems.push("tong2-bad:" + JSON.stringify(state.q.bad));
+        if (!redOn("wa") || !redOn("bd") || document.querySelector("[data-slot='ad']") || document.querySelector("[data-slot='wb']") || document.querySelector("[data-slot='an']") || document.querySelector("[data-slot='bn']")) problems.push("tong2-lock");
+        if (tongShown("L") !== "20" || tongShown("R") !== "") problems.push("tong2-shown:" + tongShown("L") + "/" + tongShown("R"));
+        const lockedWhole = document.querySelectorAll(".tong .wcell.W .numbox");
+        if (lockedWhole.length !== 1 || lockedWhole[0].textContent !== "2") problems.push("tong2-whole:" + lockedWhole.length);
+        if (state.q.focus !== "wa" || $("hintBar").textContent !== "請再填整數") problems.push("tong2-hint:" + state.q.focus + ":" + $("hintBar").textContent);
+        if (state.miss.whole !== 1 || state.miss.den !== 1 || state.miss.num || state.remain !== mixRemain - 5) problems.push("tong2-pen:" + state.miss.whole + ":" + state.miss.den + ":" + state.miss.num + ":" + (mixRemain - state.remain));
+        onKey("2");
+        if (state.q.box.wa !== "2") problems.push("tong2-clear:" + state.q.box.wa);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "bd" || state.q.phase !== "whole") problems.push("tong2-next:" + state.q.focus + ":" + state.q.phase);
+        onKey("2"); onKey("0");
+        if (state.q.box.bd !== "20") problems.push("tong2-den:" + state.q.box.bd);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.phase !== "exp" || state.q.focus !== "an" || $("hintBar").textContent !== "請填分子") problems.push("tong2-numf:" + state.q.phase + ":" + state.q.focus + ":" + $("hintBar").textContent);
+        state.q.box.an = "15";
+        state.q.box.bn = "4";
+        state.q.focus = "bn";
+        onKey("ok");
+        if (state.q.phase !== "exp" || fieldsOf(state.q).join(",") !== "bn" || !state.q.bad.bn || state.q.bad.an || document.querySelector("[data-slot='an']") || $("hintBar").textContent !== "請再通分") problems.push("tong2-num:" + fieldsOf(state.q).join(",") + ":" + $("hintBar").textContent);
+        onKey("1"); onKey("4");
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.phase !== "calc" || state.q.box.bn !== "14") problems.push("tong2-calc:" + state.q.phase + ":" + state.q.box.bn);
+        state.orderFixed = true;
+        tierBags = [[], [], [], []];
+        state.qIndex = 4;
+        state.miss = blankMiss();
+        state.ended = false;
+        state.busy = false;
+        freshQuestion();
+        type("4"); onKey("ok"); settleAnim();
+        state.q.box = { wa: "7", ad: "24", wb: "1", bd: "24", an: "9", bn: "14" };
+        onKey("ok");
+        if (state.q.phase === "exp") onKey("ok");
+        if (state.q.phase !== "borrow") problems.push("row-br:" + state.q.phase);
+        state.q.box.bw = "5";
+        state.q.box.bden = "24";
+        state.q.box.bnum = "20";
+        state.q.focus = "bnum";
+        const brRemain = state.remain;
+        onKey("ok");
+        const brDen = document.querySelector(".wrow.borrow .frac.L .numbox:not(.ph)");
+        if (state.q.phase !== "borrow" || fieldsOf(state.q).join(",") !== "bw,bnum" || !state.q.bad.bw || !state.q.bad.bnum || state.q.bad.bden) problems.push("br-both:" + fieldsOf(state.q).join(",") + ":" + JSON.stringify(state.q.bad));
+        if (!redOn("bw") || !redOn("bnum") || document.querySelector("[data-slot='bden']") || !brDen || brDen.textContent !== "24") problems.push("br-lock:" + (brDen && brDen.textContent));
+        if (state.q.focus !== "bw" || $("hintBar").textContent !== "請退 1") problems.push("br-hint:" + state.q.focus + ":" + $("hintBar").textContent);
+        if (state.miss.br !== 1 || state.miss.den || state.remain !== brRemain - 5) problems.push("br-pen:" + state.miss.br + ":" + state.miss.den + ":" + (brRemain - state.remain));
+        onKey("6");
+        if (state.q.box.bw !== "6") problems.push("br-clear:" + state.q.box.bw);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "bnum" || state.q.phase !== "borrow") problems.push("br-next:" + state.q.focus + ":" + state.q.phase);
+        onKey("3");
+        if (state.q.box.bnum !== "3") problems.push("br-num-clear:" + state.q.box.bnum);
+        onKey("3");
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.phase !== "calc" || state.q.box.bw !== "6" || state.q.box.bnum !== "33") problems.push("br-calc:" + state.q.phase + ":" + state.q.box.bnum);
+        state.q.box.cw = "4";
+        state.q.box.cn = "10";
+        state.q.box.cd = "24";
+        state.q.focus = "cn";
+        const subRemain = state.remain;
+        onKey("ok");
+        if (state.q.phase !== "calc" || fieldsOf(state.q).join(",") !== "cw,cn" || !state.q.bad.cw || !state.q.bad.cn || state.q.bad.cd || document.querySelector("[data-slot='cd']") || $("hintBar").textContent !== "請再相減") problems.push("sub-row:" + fieldsOf(state.q).join(",") + ":" + $("hintBar").textContent);
+        if (state.miss.whole !== 1 || state.miss.add !== 1 || state.remain !== subRemain - 5) problems.push("sub-pen:" + state.miss.whole + ":" + state.miss.add + ":" + (subRemain - state.remain));
+        onKey("5");
+        if (state.q.box.cw !== "5") problems.push("sub-clear:" + state.q.box.cw);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "cn" || state.q.phase !== "calc") problems.push("sub-next:" + state.q.focus);
+        onKey("1");
+        if (state.q.box.cn !== "1") problems.push("sub-num-clear:" + state.q.box.cn);
+        onKey("9");
+        if (state.q.box.cn !== "19") problems.push("sub-num:" + state.q.box.cn);
+        const doneBefore = state.done;
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.done !== doneBefore + 1) problems.push("sub-ok:" + state.done);
+        tierBags = [[], [], [], []];
+        state.qIndex = 2;
+        state.miss = blankMiss();
+        state.ended = false;
+        state.busy = false;
+        freshQuestion();
+        type("2"); onKey("ok"); settleAnim();
+        state.q.box = { wa: "2", ad: "20", wb: "2", bd: "20", an: "15", bn: "14" };
+        onKey("ok");
+        if (state.q.phase === "exp") onKey("ok");
+        state.q.box.cw = "4";
+        state.q.box.cn = "29";
+        state.q.box.cd = "20";
+        onKey("ok");
+        if (state.q.phase !== "carry") problems.push("row-carry:" + state.q.phase);
+        state.q.box.fw = "4";
+        state.q.box.fn = "9";
+        state.q.box.fd = "18";
+        state.q.focus = "fd";
+        const cRemain = state.remain;
+        onKey("ok");
+        const cNum = document.querySelector(".wrow.carry .frac.L .numbox:not(.ph)");
+        if (state.q.phase !== "carry" || fieldsOf(state.q).join(",") !== "fw,fd" || !state.q.bad.fw || !state.q.bad.fd || state.q.bad.fn) problems.push("carry-both:" + fieldsOf(state.q).join(",") + ":" + JSON.stringify(state.q.bad));
+        if (!redOn("fw") || !redOn("fd") || document.querySelector("[data-slot='fn']") || !cNum || cNum.textContent !== "9") problems.push("carry-lock:" + (cNum && cNum.textContent));
+        if (state.q.focus !== "fw" || $("hintBar").textContent !== "請進 1") problems.push("carry-hint:" + state.q.focus + ":" + $("hintBar").textContent);
+        if (state.miss.carry !== 1 || state.miss.add !== 1 || state.remain !== cRemain - 5) problems.push("carry-pen:" + state.miss.carry + ":" + state.miss.add + ":" + (cRemain - state.remain));
+        onKey("5");
+        if (state.q.box.fw !== "5") problems.push("carry-clear:" + state.q.box.fw);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.q.focus !== "fd" || state.q.phase !== "carry") problems.push("carry-next:" + state.q.focus + ":" + state.q.phase);
+        onKey("2");
+        if (state.q.box.fd !== "2") problems.push("carry-den-clear:" + state.q.box.fd);
+        onKey("0");
+        const carryDone = state.done;
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        if (state.done !== carryDone + 1 || state.q.phase !== "div") problems.push("carry-ok:" + state.done + ":" + state.q.phase);
+        state.orderFixed = true;
+        tierBags = [[], [], [], []];
+        state.qIndex = 3;
+        state.done = 0;
+        state.miss = blankMiss();
+        state.ended = false;
+        state.busy = false;
+        freshQuestion();
+        type("2"); onKey("ok"); settleAnim();
+        put("ad", "30"); put("bd", "30"); onKey("ok");
+        put("an", "25"); put("bn", "9"); onKey("ok");
+        if (state.q.phase !== "calc" || $("hintBar").textContent !== "請相減，再約分") problems.push("simp-num-phase:" + state.q.phase + ":" + $("hintBar").textContent);
+        const simpRemain = state.remain;
+        put("cn", "16"); put("cd", "15"); onKey("ok");
+        if (state.q.phase !== "calc" || !state.q.bad.cn || state.q.bad.cd || document.querySelector("[data-slot='cd']") || $("hintBar").textContent !== "請約至最簡" || state.miss.simp !== 1 || state.miss.add) problems.push("simp-num:" + state.q.phase + ":" + JSON.stringify(state.q.bad) + ":" + $("hintBar").textContent + ":" + state.miss.simp + ":" + state.miss.add);
+        if (state.remain !== simpRemain - 5) problems.push("simp-num-pen:" + (simpRemain - state.remain));
+        put("cn", "16"); put("cd", "15"); onKey("ok");
+        if ($("hintBar").textContent !== "請約至最簡 16÷2" || state.miss.simp !== 2 || state.miss.add) problems.push("simp-num2:" + $("hintBar").textContent + ":" + state.miss.simp);
+        put("cn", "7"); put("cd", "15"); onKey("ok");
+        if ($("hintBar").textContent !== "請再相減，再約分" || state.miss.add !== 1 || state.miss.simp !== 2 || state.remain !== simpRemain - 15) problems.push("simp-add:" + $("hintBar").textContent + ":" + state.miss.add + ":" + (simpRemain - state.remain));
+        put("cn", "7"); put("cd", "15"); onKey("ok");
+        if ($("hintBar").textContent !== "請再相減，再約分 25−9，16÷2" || state.miss.add !== 2) problems.push("simp-add2:" + $("hintBar").textContent + ":" + state.miss.add);
+        document.documentElement.dataset.test = problems.length ? problems.join(",") : "ok";
+      }
+      if (location.hash === "#selftest") selfCheck();
+      if (location.hash.indexOf("#preview") === 0) {
+        state.orderFixed = true;
+        tierBags = [[], [], [], []];
+        state.classId = "5A";
+        state.studentId = "01";
+        state.sheetSent = true;
+        state.qIndex = 1;
+        state.done = 0;
+        state.qTimes = [];
+        state.miss = blankMiss();
+        state.ended = false;
+        state.busy = false;
+        showScreen("game");
+        const mode = location.hash.slice(1);
+        if (mode === "preview-borrow") {
+          state.qIndex = 4;
+          freshQuestion();
+          state.q.divs = [4];
+          state.q.rows = [[8, 12], [2, 3]];
+          state.q.lcm = 24;
+          state.q.box = { an: "9", bn: "14" };
+          enter(state.q, "borrow");
+          renderAll();
+        } else if (mode === "preview-carry") {
+          state.qIndex = 2;
+          freshQuestion();
+          state.q.divs = [2];
+          state.q.rows = [[4, 10], [2, 5]];
+          state.q.lcm = 20;
+          state.q.box = { an: "15", bn: "14", cw: "4", cn: "29", cd: "20" };
+          enter(state.q, "carry");
+          renderAll();
+        } else if (mode === "preview-mixden") {
+          state.qIndex = 4;
+          freshQuestion();
+          state.q.divs = [4];
+          state.q.rows = [[8, 12], [2, 3]];
+          state.q.lcm = 24;
+          enter(state.q, "whole");
+          state.q.focus = "ad";
+          setHint("請填分母");
+          renderAll();
+        } else if (mode === "preview-whole") {
+          state.qIndex = 4;
+          freshQuestion();
+          state.q.divs = [4];
+          state.q.rows = [[8, 12], [2, 3]];
+          state.q.lcm = 24;
+          enter(state.q, "whole");
+          renderAll();
+        } else if (mode === "preview-mix") {
+          state.qIndex = 5;
+          freshQuestion();
+          state.q.divs = [2];
+          state.q.rows = [[4, 10], [2, 5]];
+          state.q.lcm = 20;
+          enter(state.q, "carry");
+          renderAll();
+        } else if (mode === "preview-calc") {
+          state.qIndex = 1;
+          freshQuestion();
+          state.q.divs = [3];
+          state.q.rows = [[9, 6], [3, 2]];
+          state.q.lcm = 18;
+          state.q.box = { an: "4", bn: "3" };
+          enter(state.q, "calc");
+          renderAll();
+        } else if (mode === "preview-mixcalc") {
+          state.qIndex = 4;
+          freshQuestion();
+          state.q.divs = [4];
+          state.q.rows = [[8, 12], [2, 3]];
+          state.q.lcm = 24;
+          state.q.box = { an: "9", bn: "14", bw: "6", bden: "24", bnum: "33" };
+          enter(state.q, "calc");
+          renderAll();
+        } else if (mode === "preview-den") {
+          state.qIndex = 1;
+          freshQuestion();
+          state.q.divs = [3];
+          state.q.rows = [[9, 6], [3, 2]];
+          state.q.lcm = 18;
+          enter(state.q, "den");
+          renderAll();
+        } else if (mode === "preview-exp") {
+          state.qIndex = 1;
+          freshQuestion();
+          state.q.divs = [3];
+          state.q.rows = [[9, 6], [3, 2]];
+          state.q.lcm = 18;
+          enter(state.q, "exp");
+          renderAll();
+        } else {
+          freshQuestion();
+          startCountdown();
+        }
+      }
+
+    })();
+  </script>
+</body>
+</html>

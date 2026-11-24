@@ -1427,7 +1427,7 @@
         q.entry = "";
         q.focus = fieldsOf(q)[0] || "";
         q.replace = "";
-        setHint(phase === "whole" ? "請填整數" : phase === "den" ? "請填分母" : phase === "exp" ? "請填分子" : phase === "borrow" ? "請退 1" : phase === "calc" ? "請" + stepLabel(q) + (mustSimp(q) ? "，再約分" : "") : "請進 1");
+        setHint(phase === "whole" ? "請填整數" : phase === "den" ? "請填分母" : phase === "exp" ? "請填分子" : phase === "borrow" ? "請退 1" : phase === "calc" ? "請" + stepLabel(q) : "請進 1");
       }
       function freshQuestion() {
         const item = takeItem();
@@ -1680,15 +1680,6 @@
         enter(q, "calc");
         renderAll();
       }
-      function mustSimp(q) {
-        const s = q.sol;
-        return !s.carry && s.finD > 0 && s.finD < s.L;
-      }
-      function rawSimp(q) {
-        const s = q.sol;
-        const g = s.L / s.finD;
-        return { g: g, top: s.finN * g, den: s.L };
-      }
       function markCalc(q, bad) {
         const order = ["cw", "cd", "cn"].filter((k) => bad.indexOf(k) >= 0);
         q.fixed = {
@@ -1701,24 +1692,9 @@
         if (order.indexOf("cn") >= 0) extras.push(fracExpr(q, false));
         if (order.indexOf("cd") >= 0) extras.push("分母 " + factorExpr(q));
         const wholeBad = order.indexOf("cw") >= 0;
-        const numBad = order.indexOf("cn") >= 0;
-        if (mustSimp(q) && numBad && !wholeBad && Number(q.box.cn) === rawSimp(q).top) {
-          const raw = rawSimp(q);
-          const extra = order.indexOf("cd") >= 0 ? raw.top + "÷" + raw.g + "、" + raw.den + "÷" + raw.g : raw.top + "÷" + raw.g;
-          fail(q, "simp", retryHint(q, "simp", "請約至最簡", extra), order);
-          return;
-        }
         const keyName = wholeBad ? "whole" : "add";
         const triesKey = wholeBad && order.length === 1 ? "cwhole" : (wholeBad ? "calc" : "add");
-        let short = "請再" + stepLabel(q);
-        let extra = extras.join("，");
-        if (mustSimp(q)) {
-          const raw = rawSimp(q);
-          short += "，再約分";
-          const simpBit = order.indexOf("cd") >= 0 ? raw.top + "÷" + raw.g + "、" + raw.den + "÷" + raw.g : raw.top + "÷" + raw.g;
-          extra = extra ? extra + "，" + simpBit : simpBit;
-        }
-        fail(q, keyName, retryHint(q, triesKey, short, extra), order);
+        fail(q, keyName, retryHint(q, triesKey, "請再" + stepLabel(q), extras.join("，")), order);
         if (wholeBad && order.length > 1) state.miss.add += 1;
       }
       function markCarry(q, badW, badN, badD) {
@@ -1776,6 +1752,20 @@
           if (wholeOn && !wholeBad) q.fixed = isCarry ? { fw: true, fd: false, fn: false } : { cw: true, cd: false, cn: false };
           fail(q, "simp", retryHint(q, "simp", "請約至最簡", extra), [nk, dk]);
           return;
+        }
+        if (!isCarry && !wholeBad && s.rawD > 0 && s.L % s.rawD === 0) {
+          const g = s.L / s.rawD;
+          const unN = s.rawN * g;
+          if (g > 1 && d === expD && n === unN) {
+            q.fixed = { cw: !!wholeOn, cd: true, cn: false };
+            fail(q, "simp", retryHint(q, "simp", "請約至最簡", unN + "÷" + g), [nk]);
+            return;
+          }
+          if (g > 1 && n === expN && d === s.L) {
+            q.fixed = { cw: !!wholeOn, cd: false, cn: true };
+            fail(q, "simp", retryHint(q, "simp", "請約至最簡", d + "÷" + g), [dk]);
+            return;
+          }
         }
         if (isCarry) {
           markCarry(q, wholeBad ? [wk] : [], n !== expN ? [nk] : [], d !== expD ? [dk] : []);
@@ -2608,7 +2598,7 @@
         if (state.q.phase !== "den") problems.push("q3den:" + state.q.phase);
         put("ad", "30"); put("bd", "30"); onKey("ok");
         put("an", "25"); put("bn", "9"); onKey("ok");
-        if (state.q.phase !== "calc" || $("hintBar").textContent !== "請相減，再約分") problems.push("simp-enter:" + state.q.phase + ":" + $("hintBar").textContent);
+        if (state.q.phase !== "calc" || $("hintBar").textContent !== "請相減") problems.push("simp-enter:" + state.q.phase + ":" + $("hintBar").textContent);
         put("cn", "16"); put("cd", "30"); onKey("ok");
         if (state.miss.simp !== 1 || $("hintBar").textContent !== "請約至最簡") problems.push("simp:" + state.miss.simp + ":" + $("hintBar").textContent);
         put("cn", "16"); put("cd", "30"); onKey("ok");
@@ -3026,17 +3016,49 @@
         type("2"); onKey("ok"); settleAnim();
         put("ad", "30"); put("bd", "30"); onKey("ok");
         put("an", "25"); put("bn", "9"); onKey("ok");
-        if (state.q.phase !== "calc" || $("hintBar").textContent !== "請相減，再約分") problems.push("simp-num-phase:" + state.q.phase + ":" + $("hintBar").textContent);
+        if (state.q.phase !== "calc" || $("hintBar").textContent !== "請相減") problems.push("simp-num-phase:" + state.q.phase + ":" + $("hintBar").textContent);
         const simpRemain = state.remain;
-        put("cn", "16"); put("cd", "15"); onKey("ok");
-        if (state.q.phase !== "calc" || !state.q.bad.cn || state.q.bad.cd || document.querySelector("[data-slot='cd']") || $("hintBar").textContent !== "請約至最簡" || state.miss.simp !== 1 || state.miss.add) problems.push("simp-num:" + state.q.phase + ":" + JSON.stringify(state.q.bad) + ":" + $("hintBar").textContent + ":" + state.miss.simp + ":" + state.miss.add);
-        if (state.remain !== simpRemain - 5) problems.push("simp-num-pen:" + (simpRemain - state.remain));
-        put("cn", "16"); put("cd", "15"); onKey("ok");
-        if ($("hintBar").textContent !== "請約至最簡 16÷2" || state.miss.simp !== 2 || state.miss.add) problems.push("simp-num2:" + $("hintBar").textContent + ":" + state.miss.simp);
         put("cn", "7"); put("cd", "15"); onKey("ok");
-        if ($("hintBar").textContent !== "請再相減，再約分" || state.miss.add !== 1 || state.miss.simp !== 2 || state.remain !== simpRemain - 15) problems.push("simp-add:" + $("hintBar").textContent + ":" + state.miss.add + ":" + (simpRemain - state.remain));
+        if (state.q.phase !== "calc" || !state.q.bad.cn || state.q.bad.cd || document.querySelector("[data-slot='cd']") || $("hintBar").textContent !== "請再相減" || state.miss.add !== 1 || state.miss.simp) problems.push("layer-add:" + $("hintBar").textContent + ":" + state.miss.add + ":" + state.miss.simp);
+        if (state.remain !== simpRemain - 5) problems.push("layer-pen:" + (simpRemain - state.remain));
         put("cn", "7"); put("cd", "15"); onKey("ok");
-        if ($("hintBar").textContent !== "請再相減，再約分 25−9，16÷2" || state.miss.add !== 2) problems.push("simp-add2:" + $("hintBar").textContent + ":" + state.miss.add);
+        if ($("hintBar").textContent !== "請再相減 25−9" || $("hintBar").textContent.indexOf("約") >= 0 || state.miss.add !== 2) problems.push("layer-add2:" + $("hintBar").textContent);
+        put("cn", "16"); put("cd", "30"); onKey("ok");
+        if ($("hintBar").textContent !== "請約至最簡" || $("hintBar").textContent.indexOf("25") >= 0 || state.miss.simp !== 1 || state.miss.add !== 2) problems.push("layer-simp:" + $("hintBar").textContent + ":" + state.miss.simp);
+        put("cn", "16"); put("cd", "30"); onKey("ok");
+        if ($("hintBar").textContent !== "請約至最簡 16÷2、30÷2" || $("hintBar").textContent.indexOf("25") >= 0 || $("hintBar").textContent.indexOf("分母") >= 0) problems.push("layer-simp2:" + $("hintBar").textContent);
+        state.orderFixed = true;
+        tierBags = [[], [], [], []];
+        state.qIndex = 3;
+        state.done = 0;
+        state.miss = blankMiss();
+        state.ended = false;
+        state.busy = false;
+        freshQuestion();
+        type("2"); onKey("ok"); settleAnim();
+        put("ad", "30"); put("bd", "30"); onKey("ok");
+        put("an", "25"); put("bn", "9"); onKey("ok");
+        put("cn", "16"); put("cd", "45"); onKey("ok");
+        if ($("hintBar").textContent !== "請再相減" || state.miss.add !== 1 || state.miss.simp) problems.push("half-den:" + $("hintBar").textContent);
+        put("cn", "16"); put("cd", "15"); onKey("ok");
+        if ($("hintBar").textContent !== "請約至最簡" || state.miss.simp !== 1 || state.miss.add !== 1 || state.q.bad.cd || !state.q.bad.cn || document.querySelector("[data-slot='cd']")) problems.push("den-ok:" + $("hintBar").textContent + ":" + state.miss.simp);
+        put("cn", "16"); onKey("ok");
+        if ($("hintBar").textContent !== "請約至最簡 16÷2" || $("hintBar").textContent.indexOf("25") >= 0 || $("hintBar").textContent.indexOf("30") >= 0 || $("hintBar").textContent.indexOf("相減") >= 0) problems.push("den-ok2:" + $("hintBar").textContent);
+        state.orderFixed = true;
+        tierBags = [[], [], [], []];
+        state.qIndex = 3;
+        state.done = 0;
+        state.miss = blankMiss();
+        state.ended = false;
+        state.busy = false;
+        freshQuestion();
+        type("2"); onKey("ok"); settleAnim();
+        put("ad", "30"); put("bd", "30"); onKey("ok");
+        put("an", "25"); put("bn", "9"); onKey("ok");
+        put("cn", "8"); put("cd", "30"); onKey("ok");
+        if ($("hintBar").textContent !== "請約至最簡" || state.miss.simp !== 1 || state.miss.add || state.q.bad.cn || !state.q.bad.cd || document.querySelector("[data-slot='cn']")) problems.push("num-ok:" + $("hintBar").textContent);
+        put("cd", "30"); onKey("ok");
+        if ($("hintBar").textContent !== "請約至最簡 30÷2" || $("hintBar").textContent.indexOf("25") >= 0 || $("hintBar").textContent.indexOf("分母") >= 0 || $("hintBar").textContent.indexOf("相減") >= 0) problems.push("num-ok2:" + $("hintBar").textContent);
         document.documentElement.dataset.test = problems.length ? problems.join(",") : "ok";
       }
       if (location.hash === "#selftest") selfCheck();

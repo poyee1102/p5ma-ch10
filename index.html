@@ -1224,6 +1224,9 @@
       function factorExpr(q) {
         return q.divs.concat(q.rows[q.rows.length - 1]).join("×");
       }
+      function labelJoin(map) {
+        return ["整數", "分母", "分子"].map((name) => map[name] ? name + map[name] : "").filter(Boolean).join("，");
+      }
       function retryHint(q, key, short, extra) {
         if (!q.tries) q.tries = {};
         q.tries[key] = (q.tries[key] || 0) + 1;
@@ -1573,11 +1576,12 @@
         const primary = badW.length ? "whole" : badD.length ? "den" : "num";
         const cats = (badW.length ? 1 : 0) + (badD.length ? 1 : 0) + (badN.length ? 1 : 0);
         const short = primary === "whole" ? "請再填整數" : primary === "den" ? "請填最小公倍數" : "請再通分";
-        const bits = [];
-        if (badW.length) bits.push(wrongWholes(q, badW));
-        if (badD.length) bits.push(factorExpr(q));
-        if (badN.length) bits.push(expandExpr(q, badN));
-        const extra = cats === 1 ? bits[0] : bits.filter(Boolean).join("，");
+        const labeled = {
+          "整數": badW.length ? wrongWholes(q, badW) : "",
+          "分母": badD.length ? factorExpr(q) : "",
+          "分子": badN.length ? expandExpr(q, badN) : ""
+        };
+        const extra = cats === 1 ? (labeled["整數"] || labeled["分母"] || labeled["分子"]) : labelJoin(labeled);
         const triesKey = cats === 1 ? primary : "tong" + (badW.length ? "w" : "") + (badD.length ? "d" : "") + (badN.length ? "n" : "");
         fail(q, primary, retryHint(q, triesKey, short, extra), order);
         if (badW.length && primary !== "whole") state.miss.whole += 1;
@@ -1655,17 +1659,17 @@
         const onlyN = badN.length && !badW.length && !badD.length;
         let keyName, triesKey, short, extra;
         if (onlyW) { keyName = "br"; triesKey = "brw"; short = "請退 1"; extra = q.a.w + "−1"; }
-        else if (onlyD) { keyName = "den"; triesKey = "den"; short = "請填最小公倍數"; extra = factorExpr(q); }
+        else if (onlyD) { keyName = "den"; triesKey = "den"; short = "請填最小公倍數"; extra = String(s.L); }
         else if (onlyN) { keyName = "br"; triesKey = "brn"; short = "請加上分母"; extra = s.an + "+" + s.L; }
         else {
           keyName = badD.length && !badW.length && !badN.length ? "den" : (badW.length || badN.length ? "br" : "den");
           triesKey = "borrow" + (badW.length ? "w" : "") + (badD.length ? "d" : "") + (badN.length ? "n" : "");
           short = badW.length ? "請退 1" : badD.length ? "請填最小公倍數" : "請加上分母";
-          const bits = [];
-          if (badW.length) bits.push(q.a.w + "−1");
-          if (badD.length) bits.push(factorExpr(q));
-          if (badN.length) bits.push(s.an + "+" + s.L);
-          extra = bits.join("，");
+          extra = labelJoin({
+            "整數": badW.length ? q.a.w + "−1" : "",
+            "分母": badD.length ? String(s.L) : "",
+            "分子": badN.length ? s.an + "+" + s.L : ""
+          });
         }
         fail(q, keyName, retryHint(q, triesKey, short, extra), order);
         if ((badW.length || badN.length) && keyName !== "br") state.miss.br += 1;
@@ -1687,14 +1691,16 @@
           cd: order.indexOf("cd") < 0,
           cn: order.indexOf("cn") < 0
         };
-        const extras = [];
-        if (order.indexOf("cw") >= 0) extras.push(sumWholeExpr(q));
-        if (order.indexOf("cn") >= 0) extras.push(fracExpr(q, false));
-        if (order.indexOf("cd") >= 0) extras.push("分母 " + factorExpr(q));
+        const labeled = {
+          "整數": order.indexOf("cw") >= 0 ? sumWholeExpr(q) : "",
+          "分母": order.indexOf("cd") >= 0 ? String(q.sol.rawD) : "",
+          "分子": order.indexOf("cn") >= 0 ? fracExpr(q, false) : ""
+        };
+        const extra = order.length > 1 ? labelJoin(labeled) : (labeled["整數"] || labeled["分子"] || ("分母 " + labeled["分母"]));
         const wholeBad = order.indexOf("cw") >= 0;
         const keyName = wholeBad ? "whole" : "add";
         const triesKey = wholeBad && order.length === 1 ? "cwhole" : (wholeBad ? "calc" : "add");
-        fail(q, keyName, retryHint(q, triesKey, "請再" + stepLabel(q), extras.join("，")), order);
+        fail(q, keyName, retryHint(q, triesKey, "請再" + stepLabel(q), extra), order);
         if (wholeBad && order.length > 1) state.miss.add += 1;
       }
       function markCarry(q, badW, badN, badD) {
@@ -1712,11 +1718,11 @@
           keyName = badW.length ? "carry" : "add";
           triesKey = "carryx" + (badW.length ? "w" : "") + (badD.length ? "d" : "") + (badN.length ? "n" : "");
           short = badW.length ? "請進 1" : badN.length ? "請減去分母" : "請填分母";
-          const bits = [];
-          if (badW.length) bits.push(carryExpr(q));
-          if (badN.length) bits.push(s.rawN + "−" + s.rawD);
-          if (badD.length) bits.push(String(s.finD));
-          extra = bits.join("，");
+          extra = labelJoin({
+            "整數": badW.length ? carryExpr(q) : "",
+            "分母": badD.length ? String(s.finD) : "",
+            "分子": badN.length ? s.rawN + "−" + s.rawD : ""
+          });
         }
         fail(q, keyName, retryHint(q, triesKey, short, extra), order);
         if (badW.length && (badN.length || badD.length)) state.miss.add += 1;
@@ -3059,6 +3065,97 @@
         if ($("hintBar").textContent !== "請約至最簡" || state.miss.simp !== 1 || state.miss.add || state.q.bad.cn || !state.q.bad.cd || document.querySelector("[data-slot='cn']")) problems.push("num-ok:" + $("hintBar").textContent);
         put("cd", "30"); onKey("ok");
         if ($("hintBar").textContent !== "請約至最簡 30÷2" || $("hintBar").textContent.indexOf("25") >= 0 || $("hintBar").textContent.indexOf("分母") >= 0 || $("hintBar").textContent.indexOf("相減") >= 0) problems.push("num-ok2:" + $("hintBar").textContent);
+        state.orderFixed = true;
+        tierBags = [[], [], [], []];
+        state.qIndex = 2;
+        state.done = 0;
+        state.miss = blankMiss();
+        state.ended = false;
+        state.busy = false;
+        freshQuestion();
+        type("2"); onKey("ok"); settleAnim();
+        state.q.box = { wa: "9", ad: "20", wb: "2", bd: "10" };
+        state.q.focus = "bd";
+        onKey("ok");
+        if ($("hintBar").textContent !== "請再填整數") problems.push("mix-tong1:" + $("hintBar").textContent);
+        state.q.box.wa = "9";
+        state.q.box.bd = "10";
+        state.q.focus = "bd";
+        onKey("ok");
+        if ($("hintBar").textContent !== "請再填整數 整數2，分母2×2×5") problems.push("mix-tong2:" + $("hintBar").textContent);
+        state.q.box = { wa: "2", ad: "20", wb: "2", bd: "20", an: "15", bn: "14" };
+        onKey("ok");
+        if (state.q.phase === "exp") onKey("ok");
+        state.q.box.cw = "1";
+        state.q.box.cd = "1";
+        state.q.box.cn = "1";
+        state.q.focus = "cn";
+        onKey("ok");
+        if ($("hintBar").textContent !== "請再相加") problems.push("mix-add1:" + $("hintBar").textContent);
+        state.q.box.cw = "1";
+        state.q.box.cd = "1";
+        state.q.box.cn = "1";
+        state.q.focus = "cn";
+        onKey("ok");
+        if ($("hintBar").textContent !== "請再相加 整數2+2，分母20，分子15+14") problems.push("mix-add2:" + $("hintBar").textContent);
+        state.q.box.cw = "4";
+        state.q.box.cd = "20";
+        state.q.box.cn = "29";
+        state.q.focus = "cn";
+        onKey("ok");
+        state.q.box.fw = "1";
+        state.q.box.fd = "1";
+        state.q.box.fn = "1";
+        state.q.focus = "fn";
+        onKey("ok");
+        if (state.q.phase !== "carry" || $("hintBar").textContent !== "請進 1") problems.push("mix-carry1:" + state.q.phase + ":" + $("hintBar").textContent);
+        state.q.box.fw = "1";
+        state.q.box.fd = "1";
+        state.q.box.fn = "1";
+        state.q.focus = "fn";
+        onKey("ok");
+        if ($("hintBar").textContent !== "請進 1 整數4+1，分母20，分子29−20") problems.push("mix-carry2:" + $("hintBar").textContent);
+        state.orderFixed = true;
+        tierBags = [[], [], [], []];
+        state.qIndex = 4;
+        state.done = 0;
+        state.miss = blankMiss();
+        state.ended = false;
+        state.busy = false;
+        freshQuestion();
+        type("4"); onKey("ok"); settleAnim();
+        state.q.box = { wa: "7", ad: "24", wb: "1", bd: "24", an: "9", bn: "14" };
+        onKey("ok");
+        if (state.q.phase === "exp") onKey("ok");
+        state.q.box.bw = "1";
+        state.q.box.bden = "1";
+        state.q.box.bnum = "1";
+        state.q.focus = "bnum";
+        onKey("ok");
+        if ($("hintBar").textContent !== "請退 1") problems.push("mix-br1:" + $("hintBar").textContent);
+        state.q.box.bw = "1";
+        state.q.box.bden = "1";
+        state.q.box.bnum = "1";
+        state.q.focus = "bnum";
+        onKey("ok");
+        if ($("hintBar").textContent !== "請退 1 整數7−1，分母24，分子9+24") problems.push("mix-br2:" + $("hintBar").textContent);
+        state.q.box.bw = "6";
+        state.q.box.bden = "24";
+        state.q.box.bnum = "33";
+        state.q.focus = "bnum";
+        onKey("ok");
+        state.q.box.cw = "1";
+        state.q.box.cd = "1";
+        state.q.box.cn = "1";
+        state.q.focus = "cn";
+        onKey("ok");
+        if (state.q.phase !== "calc" || $("hintBar").textContent !== "請再相減") problems.push("mix-sub1:" + state.q.phase + ":" + $("hintBar").textContent);
+        state.q.box.cw = "1";
+        state.q.box.cd = "1";
+        state.q.box.cn = "1";
+        state.q.focus = "cn";
+        onKey("ok");
+        if ($("hintBar").textContent !== "請再相減 整數6−1，分母24，分子33−14") problems.push("mix-sub2:" + $("hintBar").textContent);
         document.documentElement.dataset.test = problems.length ? problems.join(",") : "ok";
       }
       if (location.hash === "#selftest") selfCheck();
